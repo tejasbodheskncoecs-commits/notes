@@ -142,6 +142,7 @@ footer{margin-top:60px;color:var(--muted);font-size:13px;text-align:center}
     <section class="part" id="step1">
       <h2>Step 1 · Select module</h2>
       <p class="lead">Available modules are shown below.</p>
+      <p class="hint" id="loadMsg" style="color:var(--bad)"></p>
       <div class="modules" id="modules"></div>
     </section>
 
@@ -157,47 +158,71 @@ footer{margin-top:60px;color:var(--muted);font-size:13px;text-align:center}
 </div>
 
 <script>
-/* ---------- Config: add modules and sessions here.
-   file = the session page's file name (keep it in the same folder as this page). ---------- */
-const MODULES = [
-  {
-    id: "dbt",
-    name: "DBT",
-    desc: "MySQL and database topics",
-    available: true,
-    sessions: [
-      { no: 11, title: "Flow Control Statements", desc: "IF, CASE, LOOP, WHILE, REPEAT, LEAVE, ITERATE", file: "cdac_session11_interactive.html", available: true },
-      { no: 12, title: "MySQL Functions", desc: "String, numeric and date/time functions", file: "cdac_session12_interactive.html", available: true },
-      { no: 13, title: "Session 13", desc: "Not added yet", file: "", available: false },
-      { no: 14, title: "MySQL Triggers", desc: "BEFORE/AFTER, OLD and NEW, SIGNAL", file: "cdac_session14_triggers.html", available: true }
-    ]
-  }
-];
-
+/* =====================================================================
+   CDAC Study Home — reads sessions.json.
+   To add a module or session, edit sessions.json only (no code changes).
+   ===================================================================== */
+const CONFIG_URL = "sessions.json";
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let MODULES = [];
 let current = null;
 
-function renderModules(){
-  document.getElementById("modules").innerHTML = MODULES.map(m => `
-    <button class="mod ${m.available ? '' : 'soon'} ${current === m.id ? 'on' : ''}" data-id="${m.id}" ${m.available ? '' : 'disabled'}>
-      <b>${m.name}</b><span>${m.desc}</span>
-    </button>`).join("");
-  document.querySelectorAll(".mod").forEach(b => b.onclick = () => selectModule(b.dataset.id));
+function setMsg(text){ document.getElementById("loadMsg").textContent = text || ""; }
+
+/* Keep only valid entries; warn in console about the rest. */
+function normalize(data){
+  const out = [];
+  const mods = Array.isArray(data.modules) ? data.modules : [];
+  for (const m of mods) {
+    if (!m || !m.id || !m.name) { console.warn("Skipped module (needs id and name):", m); continue; }
+    const sessions = (Array.isArray(m.sessions) ? m.sessions : [])
+      .filter(s => { const ok = s && s.title && s.file; if(!ok) console.warn("Skipped session (needs title and file):", s); return ok; })
+      .map(s => ({ number: Number(s.number) || 0, title: String(s.title), description: String(s.description || ""), file: String(s.file).trim() }))
+      .sort((a, b) => a.number - b.number);
+    out.push({ id: String(m.id), name: String(m.name), description: String(m.description || ""), sessions });
+  }
+  return out;
 }
 
-function selectModule(id){
-  current = id;
+/* Does the session HTML file exist on the site? */
+async function fileExists(file){
+  try {
+    let r = await fetch(file, { method: "HEAD", cache: "no-store" });
+    if (r.status === 405) r = await fetch(file, { cache: "no-store" });
+    return r.ok;
+  } catch (e) { return false; }
+}
+
+function renderModules(){
+  const box = document.getElementById("modules");
+  if (!MODULES.length) { box.innerHTML = ""; setMsg("No modules found in sessions.json."); return; }
+  box.innerHTML = MODULES.map(m => `
+    <button class="mod ${current === m.id ? 'on' : ''}" data-id="${esc(m.id)}">
+      <b>${esc(m.name)}</b><span>${esc(m.description)}</span>
+    </button>`).join("");
+  box.querySelectorAll(".mod").forEach(b => b.onclick = () => selectModule(b.dataset.id));
+}
+
+async function selectModule(id){
   const m = MODULES.find(x => x.id === id);
+  if (!m) return;
+  current = id;
   renderModules();
   document.getElementById("modTitle").textContent = "Sessions in " + m.name + ":";
-  document.getElementById("sessions").innerHTML = m.sessions.map(s => {
-    const label = "Session " + s.no;
-    if (!s.available) {
-      return `<div class="sess disabled"><div class="num">${label}</div><h3>${s.title}</h3><p>${s.desc}</p><div class="go">Not available</div></div>`;
-    }
-    return `<a class="sess" href="${s.file}"><div class="num">${label}</div><h3>${s.title}</h3><p>${s.desc}</p><div class="go">Open session →</div></a>`;
-  }).join("");
-  document.getElementById("step2").scrollIntoView({behavior:"smooth"});
+  const box = document.getElementById("sessions");
+  box.innerHTML = m.sessions.length ? '<p class="lead">Checking files…</p>' : '<p class="lead">No sessions listed for this module yet.</p>';
   history.replaceState(null, "", "#" + id);
+  document.getElementById("step2").scrollIntoView({ behavior: "smooth" });
+
+  const status = await Promise.all(m.sessions.map(s => fileExists(s.file)));
+  if (current !== id) return; // user switched module meanwhile
+  box.innerHTML = m.sessions.map((s, i) => {
+    const label = "Session " + s.number;
+    if (!status[i]) {
+      return `<div class="sess disabled"><div class="num">${esc(label)}</div><h3>${esc(s.title)}</h3><p>${esc(s.description || "Not added yet")}</p><div class="go">Not added yet</div></div>`;
+    }
+    return `<a class="sess" href="${encodeURI(s.file)}"><div class="num">${esc(label)}</div><h3>${esc(s.title)}</h3><p>${esc(s.description)}</p><div class="go">Open session →</div></a>`;
+  }).join("");
 }
 
 document.getElementById("theme").addEventListener("click", () => {
@@ -206,9 +231,23 @@ document.getElementById("theme").addEventListener("click", () => {
   else { document.documentElement.setAttribute("data-theme", "dark"); document.getElementById("theme").textContent = "☀️"; }
 });
 
-renderModules();
-const start = location.hash.replace("#", "");
-if (start && MODULES.some(m => m.id === start && m.available)) selectModule(start);
+async function init(){
+  let data;
+  try {
+    const r = await fetch(CONFIG_URL, { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    data = await r.json();
+  } catch (e) {
+    setMsg("Could not load sessions.json (" + e.message + "). Make sure sessions.json is uploaded to the same folder as index.html, and open this page through its GitHub Pages link.");
+    document.getElementById("modules").innerHTML = "";
+    return;
+  }
+  MODULES = normalize(data);
+  renderModules();
+  const start = location.hash.replace("#", "");
+  if (start && MODULES.some(m => m.id === start)) selectModule(start);
+}
+init();
 </script>
 </body>
 </html>

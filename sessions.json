@@ -1,0 +1,35 @@
+{
+  "modules": [
+    {
+      "id": "dbt",
+      "name": "DBT",
+      "description": "MySQL and database topics",
+      "sessions": [
+        {
+          "number": 11,
+          "title": "Flow Control Statements",
+          "description": "IF, CASE, LOOP, WHILE, REPEAT, LEAVE, ITERATE",
+          "file": "cdac_session11_interactive.html"
+        },
+        {
+          "number": 12,
+          "title": "MySQL Functions",
+          "description": "String, numeric and date/time functions",
+          "file": "cdac_session12_interactive.html"
+        },
+        {
+          "number": 13,
+          "title": "Session 13",
+          "description": "Not added yet",
+          "file": "cdac_session13.html"
+        },
+        {
+          "number": 14,
+          "title": "MySQL Triggers",
+          "description": "BEFORE/AFTER, OLD and NEW, SIGNAL",
+          "file": "cdac_session14_triggers.html"
+        }
+      ]
+    }
+  ]
+}
