@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CDAC DBT Session 14 — MySQL Triggers</title>
+<style>
+
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#f0f3f9; --text:#1b2333; --muted:#5d6779;
+  --accent:#4f46e5; --accent2:#0ea5a4; --ok:#16a34a; --bad:#dc2626; --warn:#f59e0b;
+  --code-bg:#0f172a; --code-text:#e2e8f0; --border:#e3e7ef; --shadow:0 6px 24px rgba(15,23,42,.07);
+  --radius:16px;
+}
+[data-theme="dark"]{
+  --bg:#0b1020; --surface:#131a2e; --surface2:#1a2340; --text:#e6ebf5; --muted:#9aa6bf;
+  --accent:#818cf8; --accent2:#2dd4bf; --border:#26304d; --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:1200px;margin:auto;display:flex;align-items:center;gap:14px;padding:12px 18px}
+.brand{font-weight:800;letter-spacing:-.2px;display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px}
+.search{flex:1;max-width:420px;position:relative;margin-left:auto}
+.search input{width:100%;padding:10px 14px 10px 38px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit;outline:none}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.search::before{content:"⌕";position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:18px}
+.iconbtn{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:12px;padding:9px 12px;cursor:pointer;font:inherit}
+.iconbtn:hover{border-color:var(--accent)}
+.wrap{max-width:1200px;margin:auto;display:grid;grid-template-columns:240px 1fr;gap:28px;padding:24px 18px 80px}
+nav.side{position:sticky;top:84px;align-self:start}
+nav.side a{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;color:var(--muted);text-decoration:none;font-weight:600;font-size:14.5px;margin-bottom:4px}
+nav.side a:hover,nav.side a.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+nav.side .count{font-size:12px;background:var(--surface2);padding:2px 8px;border-radius:999px}
+.progress-card{margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.bar{height:8px;background:var(--surface2);border-radius:999px;overflow:hidden;margin-top:8px}
+.bar>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+main{min-width:0}
+.hero{background:linear-gradient(135deg,#4f46e5,#0ea5a4);color:#fff;border-radius:22px;padding:34px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 8px;font-size:clamp(24px,4vw,36px);letter-spacing:-.6px}
+.hero p{margin:0;opacity:.92;max-width:680px}
+.hero .chips{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+.hero .chip{background:rgba(255,255,255,.18);padding:6px 12px;border-radius:999px;font-size:13px}
+section.part{margin-top:44px;scroll-margin-top:84px}
+section.part>h2{font-size:24px;letter-spacing:-.4px;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h3{margin:0;font-size:18px;font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--accent)}
+.tag{font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:3px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);font-weight:700}
+.card p{margin:0;font-size:14.5px;color:var(--muted)}
+.card p b{color:var(--text)}
+.full{grid-column:1/-1}
+pre{margin:0;background:var(--code-bg);color:var(--code-text);padding:12px 14px;border-radius:12px;overflow-x:auto;font:13px/1.6 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;position:relative;white-space:pre}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.out{background:color-mix(in srgb,var(--ok) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--ok) 40%,transparent);border-radius:12px;padding:10px 12px;font:13.5px "JetBrains Mono",ui-monospace,monospace;color:var(--text);white-space:pre-wrap}
+.tip{font-size:13.5px;background:color-mix(in srgb,var(--warn) 14%,var(--surface));border-left:3px solid var(--warn);padding:8px 12px;border-radius:10px;color:var(--text)}
+.learned{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.learned input{accent-color:var(--ok);width:16px;height:16px}
+.hide{display:none!important}
+.copy{position:absolute;top:8px;right:8px;font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;cursor:pointer}
+.copy:hover{color:#fff}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+.slider-row{display:flex;align-items:center;gap:14px;margin:10px 0}
+input[type=range]{flex:1;accent-color:var(--accent)}
+select{padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit}
+.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.rung{padding:12px 8px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);text-align:center;font-size:13.5px;transition:all .25s}
+.rung small{display:block;color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:12px}
+.rung.hit{background:color-mix(in srgb,var(--ok) 18%,var(--surface));border-color:var(--ok);font-weight:700}
+.rung.skip{opacity:.5}
+.result{font-size:24px;font-weight:800;margin-top:6px}
+.trace{background:var(--code-bg);color:var(--code-text);border-radius:12px;padding:12px 14px;font:13px/1.7 "JetBrains Mono",ui-monospace,monospace;min-height:150px;max-height:260px;overflow:auto;white-space:pre-wrap}
+.trace .now{color:#fde047}
+.vars{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.var{padding:8px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);font-family:"JetBrains Mono",monospace;font-size:14px}
+.var b{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:var(--surface2);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.q{padding:4px 0}
+.q h4{margin:0 0 10px;font-size:16px;line-height:1.5}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font:inherit}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:color-mix(in srgb,var(--ok) 18%,var(--surface));border-color:var(--ok)}
+.opt.wrong{background:color-mix(in srgb,var(--bad) 16%,var(--surface));border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.feedback{font-size:14px;margin-top:8px;color:var(--muted);min-height:20px}
+.score{font-size:28px;font-weight:800;margin-top:12px}
+footer{margin-top:60px;color:var(--muted);font-size:13px;text-align:center}
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  nav.side{position:static;display:flex;overflow-x:auto;gap:6px;padding-bottom:6px}
+  nav.side a{white-space:nowrap;margin:0}
+  .progress-card,.search{display:none}
+  .ladder{grid-template-columns:repeat(2,1fr)}
+}
+
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.fstep{padding:10px 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);font-size:13.5px;flex:1 1 150px;text-align:center;transition:all .25s;opacity:.55}
+.fstep.on{opacity:1;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent);font-weight:700}
+.fstep.err{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,var(--surface));opacity:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chipr{padding:8px 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);font-size:13px;font-family:"JetBrains Mono",monospace}
+.chipr.fire{background:color-mix(in srgb,var(--ok) 15%,var(--surface));border-color:var(--ok)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer;font:inherit;font-size:13.5px;font-weight:600}
+.seg button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.yn{font-weight:700}
+.yes{color:var(--ok)} .no{color:var(--bad)}
+.msg{font-family:"JetBrains Mono",monospace;font-size:14px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--surface2)}
+.msg.err{color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+.msg.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface))}
+.summary li{margin-bottom:6px}
+ol.sum,ul.sum{margin:6px 0 0 18px;padding:0;font-size:14.5px;color:var(--text)}
+ul.sum li{margin-bottom:5px}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><div class="logo">TR</div><span>CDAC DBT · Session 14</span></div>
+    <div class="search"><input id="q" type="search" placeholder="Search OLD, NEW, SIGNAL, FOR EACH ROW…" aria-label="Search"></div>
+    <button class="iconbtn" id="theme" title="Toggle dark mode">🌙</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="side">
+    <a href="#basics">1. What is a trigger</a>
+    <a href="#timing">2. Automatic run · BEFORE/AFTER</a>
+    <a href="#events">4. INSERT · UPDATE · DELETE</a>
+    <a href="#combos">5. Six combinations</a>
+    <a href="#rowlevel">6. FOR EACH ROW</a>
+    <a href="#oldnew">7. OLD and NEW</a>
+    <a href="#syntax">8–9. Syntax · DELIMITER</a>
+    <a href="#signal">10. SIGNAL</a>
+    <a href="#examples">11. Students examples</a>
+    <a href="#traps">12. MySQL 8.0 · Traps</a>
+    <a href="#compare">Comparison</a>
+    <a href="#summary">One-page summary</a>
+    <div class="progress-card">
+      <div style="font-weight:700;font-size:14px">Your progress</div>
+      <div style="font-size:13px;color:var(--muted)" id="ptext"></div>
+      <div class="bar"><div id="pbar"></div></div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <h1>MySQL Triggers</h1>
+      <p>A trigger is code that runs by itself when a row is inserted, updated or deleted. Learn when it runs (BEFORE or AFTER), what it can see (OLD and NEW), and how to stop bad data with SIGNAL.</p>
+      <div class="chips" style="margin-top:18px"><span class="chip">6 combinations</span><span class="chip">Live timeline</span><span class="chip">Marks validator</span><span class="chip">Students examples</span></div>
+    </div>
+
+    <section class="part" id="basics">
+      <h2>1. What is a trigger?</h2>
+      <p class="lead">Definition and purpose, in plain English.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="card-head"><h3>Definition</h3><span class="tag">simple</span></div>
+          <p>A <b>trigger</b> is a named block of SQL that is attached to a table. MySQL runs it automatically when a certain change happens to that table.</p>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Purpose</h3><span class="tag">why</span></div>
+          <p>Use triggers to keep data correct and to record changes automatically, without relying on every program to remember the rule. Example: a college office wants every new student mark checked, even if the data is entered from different forms.</p>
+        </div>
+        <div class="card full">
+          <div class="card-head"><h3>Trigger vs stored procedure</h3><span class="tag">key difference</span></div>
+          <p>A <b>stored procedure</b> runs only when you write <b>CALL</b>. A <b>trigger</b> runs automatically because of an INSERT, UPDATE or DELETE, and you cannot CALL it.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="part" id="timing">
+      <h2>2–3. How triggers run automatically · BEFORE vs AFTER</h2>
+      <p class="lead">Press <b>Step</b> to follow one INSERT through a BEFORE trigger and an AFTER trigger.</p>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between">
+          <div class="seg" id="simMode">
+            <button class="on" data-m="ok">Normal insert</button>
+            <button data-m="err">BEFORE trigger raises an error</button>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="tStep">Step ▶</button>
+            <button class="btn" id="tReset">Reset</button>
+          </div>
+        </div>
+        <div class="flow" id="flow">
+          <div class="fstep">1. Your statement starts<br><small>INSERT INTO students ...</small></div>
+          <div class="fstep">2. BEFORE INSERT trigger runs<br><small>can check or change NEW</small></div>
+          <div class="fstep">3. Row is actually written</div>
+          <div class="fstep">4. AFTER INSERT trigger runs<br><small>can log, but NEW is read-only</small></div>
+          <div class="fstep">5. Statement finishes</div>
+        </div>
+        <div class="msg" id="tMsg">Ready. Press Step.</div>
+      </div>
+      <div class="grid" style="margin-top:14px">
+        <div class="card"><div class="card-head"><h3>BEFORE</h3><span class="tag">runs first</span></div><p>Runs <b>before</b> the change. Use it to <b>check</b> data or <b>set</b> NEW values. Use SIGNAL to stop the change.</p></div>
+        <div class="card"><div class="card-head"><h3>AFTER</h3><span class="tag">runs last</span></div><p>Runs <b>after</b> the row is written. Use it to <b>log</b> changes or update another table. You cannot change NEW here.</p></div>
+      </div>
+    </section>
+
+    <section class="part" id="events">
+      <h2>4. INSERT, UPDATE and DELETE events</h2>
+      <p class="lead">A trigger is tied to one table and one event. Three events exist.</p>
+      <div class="grid">
+        <div class="card"><div class="card-head"><h3>INSERT</h3><span class="tag">new row</span></div><p>Fires when a new row is added. Example: a new student is registered.</p></div>
+        <div class="card"><div class="card-head"><h3>UPDATE</h3><span class="tag">changed row</span></div><p>Fires when an existing row changes. Example: a student's marks are corrected.</p></div>
+        <div class="card"><div class="card-head"><h3>DELETE</h3><span class="tag">removed row</span></div><p>Fires when a row is removed. Example: a student leaves the college record.</p></div>
+      </div>
+    </section>
+
+    <section class="part" id="combos">
+      <h2>5. The six combinations</h2>
+      <p class="lead">Timing (BEFORE/AFTER) combined with event (INSERT/UPDATE/DELETE). Tap a card for its typical use.</p>
+      <div class="grid" id="comboGrid"></div>
+    </section>
+
+    <section class="part" id="rowlevel">
+      <h2>6. Row-level triggers and FOR EACH ROW</h2>
+      <p class="lead">In MySQL, every trigger is <b>row-level</b>: it runs once for <b>each row</b> that the statement changes.</p>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <b>Rows changed by one statement</b>
+          <div class="row"><input type="range" id="rows" min="1" max="5" value="3" style="width:200px"><b id="rowsV" style="min-width:90px">3 rows</b></div>
+        </div>
+        <p style="margin:10px 0 0;font-size:14px">Example: <code>INSERT INTO students VALUES (...), (...), (...);</code> changes 3 rows.</p>
+        <div class="chips" id="rowChips"></div>
+        <div class="msg" id="rowMsg"></div>
+      </div>
+      <div class="grid" style="margin-top:14px">
+        <div class="card full"><div class="card-head"><h3>Timing vs row level</h3><span class="tag">don't mix these up</span></div>
+          <p><b>Timing</b> answers <i>when</i>: BEFORE or AFTER the change. <b>Row level</b> answers <i>how often</i>: once per affected row. A BEFORE INSERT trigger on a 3-row insert fires 3 times, and so does the AFTER INSERT trigger.</p></div>
+      </div>
+    </section>
+
+    <section class="part" id="oldnew">
+      <h2>7. OLD and NEW</h2>
+      <p class="lead">Two special names let a trigger refer to the row. Pick an event and timing to see what is available.</p>
+      <div class="panel">
+        <div class="row" style="gap:16px;align-items:center">
+          <div class="seg" id="evSeg"><button class="on" data-e="INSERT">INSERT</button><button data-e="UPDATE">UPDATE</button><button data-e="DELETE">DELETE</button></div>
+          <div class="seg" id="tmSeg"><button class="on" data-t="BEFORE">BEFORE</button><button data-t="AFTER">AFTER</button></div>
+        </div>
+        <div class="grid" id="oldnewOut" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));margin-top:14px"></div>
+        <p id="oldnewUse" style="margin:12px 0 0;font-size:14.5px;color:var(--muted)"></p>
+      </div>
+      <div class="tablewrap" style="margin-top:14px">
+        <table>
+          <tr><th>Event</th><th>OLD (row before)</th><th>NEW (row after)</th><th>Change NEW?</th></tr>
+          <tr><td>INSERT</td><td class="no">Not available</td><td class="yes">Yes</td><td>BEFORE only</td></tr>
+          <tr><td>UPDATE</td><td class="yes">Yes</td><td class="yes">Yes</td><td>BEFORE only</td></tr>
+          <tr><td>DELETE</td><td class="yes">Yes</td><td class="no">Not available</td><td>Not applicable</td></tr>
+        </table>
+      </div>
+      <p class="lead" style="margin-top:12px"><b>Remember:</b> <code>NEW.marks</code> means the new marks value. <code>OLD.marks</code> means the marks value before the change.</p>
+    </section>
+
+    <section class="part" id="syntax">
+      <h2>8–9. CREATE TRIGGER syntax and DELIMITER</h2>
+      <div class="grid">
+        <div class="card full">
+          <div class="card-head"><h3>CREATE TRIGGER</h3><span class="tag">syntax</span></div>
+          <pre><code>CREATE TRIGGER trigger_name
+BEFORE INSERT ON students      -- timing + event + table
+FOR EACH ROW                   -- row-level
+BEGIN
+    -- statements
+END;</code></pre>
+          <p><b>Line by line:</b> <code>trigger_name</code> is the name you choose. <code>BEFORE INSERT ON students</code> says when and on which table. <code>FOR EACH ROW</code> makes it run per row. <code>BEGIN ... END</code> wraps the body.</p>
+          <div class="out"><b>Also useful:</b> SHOW TRIGGERS;   DROP TRIGGER trigger_name;</div>
+        </div>
+        <div class="card full">
+          <div class="card-head"><h3>DELIMITER</h3><span class="tag">command-line client</span></div>
+          <p>In the MySQL command-line client, the semicolon normally ends a statement. A trigger body has semicolons inside it, so the client would stop too early. <code>DELIMITER //</code> changes the end marker to <code>//</code> while you type the trigger, then <code>DELIMITER ;</code> changes it back.</p>
+          <pre><code>DELIMITER //
+CREATE TRIGGER before_student_insert ... END //
+DELIMITER ;</code></pre>
+          <div class="tip">💡 Use DELIMITER even when the body is a single line ending with a semicolon. Without it, the client ends CREATE TRIGGER at that first semicolon.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="part" id="signal">
+      <h2>10. Raising an error with SIGNAL SQLSTATE '45000'</h2>
+      <p class="lead">Used inside a BEFORE trigger to stop an invalid change. The row is not written.</p>
+      <div class="panel">
+        <pre><code>SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'Marks must be between 0 and 100';</code></pre>
+        <p style="font-size:14.5px">'45000' is the generic code for a user-defined error. <code>MESSAGE_TEXT</code> is the message the user sees.</p>
+        <div class="slider-row"><b style="min-width:110px">Marks to insert</b><input type="range" id="sm" min="-10" max="120" value="82"><b id="smv" style="min-width:60px;text-align:right">82</b></div>
+        <div class="msg" id="smOut"></div>
+        <p style="font-size:13px;color:var(--muted);margin:8px 0 0">This copies the BEFORE INSERT logic from the examples: marks outside 0–100 raise an error, and valid marks get a grade.</p>
+      </div>
+    </section>
+
+    <section class="part" id="examples">
+      <h2>11. Practical examples: students table</h2>
+      <p class="lead">Run the setup first, then the triggers in order. Each card explains the important lines.</p>
+      <div class="grid" id="exGrid"></div>
+    </section>
+
+    <section class="part" id="traps">
+      <h2>12. MySQL 8.0 facts and exam traps</h2>
+      <div class="grid" id="trapGrid"></div>
+    </section>
+
+    <section class="part" id="compare">
+      <h2>Quick comparison</h2>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Topic</th><th>Option A</th><th>Option B</th></tr>
+          <tr><td>Timing</td><td>BEFORE: runs before the change; can change NEW</td><td>AFTER: runs after the change; NEW is read-only</td></tr>
+          <tr><td>Event</td><td>INSERT: has NEW only</td><td>DELETE: has OLD only</td></tr>
+          <tr><td>Run count</td><td>Trigger: runs by itself</td><td>Procedure: runs only with CALL</td></tr>
+          <tr><td>Level</td><td>Row-level: once per affected row</td><td>Statement-level: once per statement (not supported in MySQL)</td></tr>
+          <tr><td>Stop bad data</td><td>BEFORE + SIGNAL: row is not written</td><td>AFTER + SIGNAL: row already written (cannot stop it)</td></tr>
+          <tr><td>Name</td><td>OLD: value before change</td><td>NEW: value after change</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="part" id="summary">
+      <h2>One-page revision summary</h2>
+      <div class="panel">
+        <ul class="sum">
+          <li><b>Trigger</b> = SQL attached to a table that runs automatically on INSERT, UPDATE or DELETE.</li>
+          <li><b>BEFORE</b> runs first: check data, set NEW values, or stop with SIGNAL. <b>AFTER</b> runs last: log changes or update other tables.</li>
+          <li><b>Six combinations:</b> BEFORE/AFTER × INSERT/UPDATE/DELETE.</li>
+          <li><b>FOR EACH ROW:</b> MySQL triggers are row-level, so they fire once for each affected row.</li>
+          <li><b>NEW</b> = row after change (INSERT, UPDATE). <b>OLD</b> = row before change (UPDATE, DELETE). Only BEFORE triggers can change NEW.</li>
+          <li><b>DELIMITER //</b> lets the body keep its semicolons. Reset with <b>DELIMITER ;</b>.</li>
+          <li><b>SIGNAL SQLSTATE '45000'</b> raises a custom error. Use it in BEFORE triggers to block the change.</li>
+          <li><b>Traps:</b> a trigger cannot change its own table; TRUNCATE does not fire DELETE triggers; you cannot CALL a trigger.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>CDAC DBT — Session 14 · MySQL 8.0 syntax · Based on the DBT Session 14 revision notes</footer>
+  </main>
+</div>
+<script>
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------- 5. Six combinations ---------- */
+const COMBOS=[
+ {k:"BEFORE INSERT",use:"Validate new data or set NEW values (e.g. grade from marks). SIGNAL stops bad rows.",ex:"Reject marks below 0 or above 100."},
+ {k:"AFTER INSERT",use:"Record the new row elsewhere, e.g. into a log table.",ex:"Insert a log row with NEW.student_id."},
+ {k:"BEFORE UPDATE",use:"Check the change using OLD and NEW; block or adjust it.",ex:"Stop marks from being reduced."},
+ {k:"AFTER UPDATE",use:"Log what changed, comparing OLD and NEW values.",ex:"Store old marks and new marks."},
+ {k:"BEFORE DELETE",use:"Block a deletion based on OLD values.",ex:"Stop deleting a student who has passed."},
+ {k:"AFTER DELETE",use:"Log the removed row using OLD.",ex:"Store the deleted student's marks."}
+];
+document.getElementById("comboGrid").innerHTML=COMBOS.map((c,i)=>`
+ <article class="card" data-search="${esc((c.k+' '+c.use).toLowerCase())}">
+  <div class="card-head"><h3>${c.k}</h3><span class="tag">${c.k.startsWith('BEFORE')?'before':'after'}</span></div>
+  <p><b>Use:</b> ${esc(c.use)}</p>
+  <p><b>Example:</b> ${esc(c.ex)}</p>
+ </article>`).join('');
+
+/* ---------- 7. OLD / NEW explorer ---------- */
+const OLDNEW={
+ INSERT:{old:false,new:true},
+ UPDATE:{old:true,new:true},
+ DELETE:{old:true,new:false}
+};
+let ev="INSERT",tm="BEFORE";
+function renderOldNew(){
+  const o=OLDNEW[ev];
+  const canSet=o.new && tm==="BEFORE";
+  const cell=(ok,label)=>`<div class="card"><div class="card-head"><h3>${label}</h3><span class="tag">${ok?'yes':'no'}</span></div><p class="yn ${ok?'yes':'no'}">${ok?'✔ Available':'✘ Not available'}</p></div>`;
+  document.getElementById("oldnewOut").innerHTML =
+    cell(o.old,"OLD") + cell(o.new,"NEW") +
+    `<div class="card"><div class="card-head"><h3>Set NEW.col?</h3><span class="tag">${canSet?'yes':'no'}</span></div><p class="yn ${canSet?'yes':'no'}">${canSet?'✔ Allowed (BEFORE only)':'✘ Not allowed'}</p></div>`;
+  const uses={
+    "INSERT-BEFORE":"Example: BEFORE INSERT sets NEW.grade from NEW.marks.",
+    "INSERT-AFTER":"Example: AFTER INSERT logs NEW.student_id. NEW cannot be changed here.",
+    "UPDATE-BEFORE":"Example: BEFORE UPDATE compares NEW.marks with OLD.marks and blocks a reduction.",
+    "UPDATE-AFTER":"Example: AFTER UPDATE logs OLD.marks and NEW.marks.",
+    "DELETE-BEFORE":"Example: BEFORE DELETE checks OLD.marks and blocks deleting a passed student.",
+    "DELETE-AFTER":"Example: AFTER DELETE logs OLD.marks. The row is already gone, so OLD is read-only."
+  };
+  document.getElementById("oldnewUse").textContent=uses[ev+"-"+tm];
+}
+document.querySelectorAll("#evSeg button").forEach(b=>b.onclick=()=>{ev=b.dataset.e;document.querySelectorAll("#evSeg button").forEach(x=>x.classList.toggle("on",x===b));renderOldNew();});
+document.querySelectorAll("#tmSeg button").forEach(b=>b.onclick=()=>{tm=b.dataset.t;document.querySelectorAll("#tmSeg button").forEach(x=>x.classList.toggle("on",x===b));renderOldNew();});
+renderOldNew();
+
+/* ---------- 2–3. Timeline ---------- */
+let mode="ok", tIdx=-1;
+const flowSteps=[...document.querySelectorAll("#flow .fstep")];
+const tMsg=document.getElementById("tMsg");
+const TMSG=[
+ "Step 1: the INSERT statement starts.",
+ "Step 2: the BEFORE INSERT trigger runs first, for this row.",
+ "Step 3: the row is written to the table.",
+ "Step 4: the AFTER INSERT trigger runs. It can log, but NEW cannot be changed.",
+ "Step 5: the statement finishes and the change is final."
+];
+function renderFlow(){
+  const errStop = mode==="err" && tIdx>=2;
+  flowSteps.forEach((el,i)=>{
+    el.classList.remove("on","err");
+    if(i<=tIdx && !(errStop && i>=2)) el.classList.add("on");
+  });
+  if(tIdx<0){tMsg.className="msg";tMsg.textContent="Ready. Press Step.";return;}
+  if(mode==="err"){
+    if(tIdx>=1) flowSteps[1].classList.add("err");
+    if(tIdx===1){tMsg.className="msg";tMsg.textContent="Step 2: the BEFORE trigger runs and calls SIGNAL SQLSTATE '45000'.";return;}
+    if(tIdx>=2){tMsg.className="msg err";tMsg.textContent="ERROR 1644 (45000): the statement is stopped. The row is NOT written and the AFTER trigger does NOT run.";return;}
+  }
+  tMsg.className="msg ok";tMsg.textContent=TMSG[tIdx];
+}
+document.getElementById("tStep").onclick=()=>{
+  const max = mode==="err" ? 2 : 4;
+  if(tIdx<max) tIdx++;
+  renderFlow();
+};
+document.getElementById("tReset").onclick=()=>{tIdx=-1;renderFlow();};
+document.querySelectorAll("#simMode button").forEach(b=>b.onclick=()=>{
+  mode=b.dataset.m;
+  document.querySelectorAll("#simMode button").forEach(x=>x.classList.toggle("on",x===b));
+  tIdx=-1; renderFlow();
+});
+renderFlow();
+
+/* ---------- 6. Row-level counter ---------- */
+const rowsEl=document.getElementById("rows");
+function renderRows(){
+  const n=+rowsEl.value;
+  document.getElementById("rowsV").textContent=n+(n===1?" row":" rows");
+  let chips="";
+  for(let r=1;r<=n;r++){
+    chips+=`<span class="chipr fire">row ${r}: BEFORE ✓ → write → AFTER ✓</span>`;
+  }
+  document.getElementById("rowChips").innerHTML=chips;
+  document.getElementById("rowMsg").className="msg ok";
+  document.getElementById("rowMsg").textContent=`One INSERT that changes ${n} row${n>1?'s':''} fires the BEFORE INSERT trigger ${n} time${n>1?'s':''} and the AFTER INSERT trigger ${n} time${n>1?'s':''}.`;
+}
+rowsEl.addEventListener("input",renderRows); renderRows();
+
+/* ---------- 10. SIGNAL checker ---------- */
+const sm=document.getElementById("sm");
+function renderSignal(){
+  const m=+sm.value;
+  document.getElementById("smv").textContent=m;
+  const out=document.getElementById("smOut");
+  if(m<0||m>100){out.className="msg err";out.textContent="ERROR 1644 (45000): Marks must be between 0 and 100. Row NOT inserted.";return;}
+  const g=m>=75?"Distinction":m>=40?"Pass":"Fail";
+  out.className="msg ok";out.textContent=`Row inserted. The BEFORE trigger set grade = '${g}'.`;
+}
+sm.addEventListener("input",renderSignal); renderSignal();
+
+/* ---------- 11. Examples ---------- */
+const EX=[
+ {t:"Setup: tables",tag:"run first",m:"Two tables: students (the main table) and student_log (where the triggers write history).",
+  c:`CREATE DATABASE college;
+USE college;
+
+CREATE TABLE students (
+    student_id INT PRIMARY KEY,
+    name       VARCHAR(50),
+    marks      INT,
+    grade      VARCHAR(15)
+);
+
+CREATE TABLE student_log (
+    log_id     INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT,
+    action     VARCHAR(10),
+    old_marks  INT,
+    new_marks  INT,
+    changed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);`,
+  o:"Two empty tables are ready.",tip:"AUTO_INCREMENT numbers log_id automatically. You do not insert it."},
+ {t:"BEFORE INSERT: validate and set grade",tag:"BEFORE · INSERT",m:"Checks the marks, then sets NEW.grade. This is the trigger that uses SIGNAL.",
+  c:`DELIMITER //
+CREATE TRIGGER before_student_insert
+BEFORE INSERT ON students
+FOR EACH ROW
+BEGIN
+    IF NEW.marks < 0 OR NEW.marks > 100 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Marks must be between 0 and 100';
+    END IF;
+
+    IF NEW.marks >= 75 THEN
+        SET NEW.grade = 'Distinction';
+    ELSEIF NEW.marks >= 40 THEN
+        SET NEW.grade = 'Pass';
+    ELSE
+        SET NEW.grade = 'Fail';
+    END IF;
+END //
+DELIMITER ;
+
+INSERT INTO students VALUES (1, 'Ravi', 82, NULL);
+-- Row stored with grade = 'Distinction'
+
+INSERT INTO students VALUES (2, 'Meena', 120, NULL);
+-- ERROR 1644 (45000): Marks must be between 0 and 100`,
+  o:"Ravi: grade = Distinction.\nMeena: ERROR 1644, row not inserted.",
+  tip:"SET NEW.grade works here because this is a BEFORE trigger. In an AFTER trigger it is not allowed."},
+ {t:"AFTER INSERT: log the new row",tag:"AFTER · INSERT",m:"Writes a history row into student_log after the student row is stored.",
+  c:`DELIMITER //
+CREATE TRIGGER after_student_insert
+AFTER INSERT ON students
+FOR EACH ROW
+BEGIN
+    INSERT INTO student_log (student_id, action, new_marks)
+    VALUES (NEW.student_id, 'INSERT', NEW.marks);
+END //
+DELIMITER ;
+
+INSERT INTO students VALUES (3, 'Arjun', 55, NULL);
+SELECT * FROM student_log;`,
+  o:"student_log now has a row: student_id 3, action INSERT, new_marks 55.",
+  tip:"The log table is a different table, so there is no loop. A trigger that updates its own table is not allowed."},
+ {t:"BEFORE UPDATE: marks cannot go down",tag:"BEFORE · UPDATE",m:"Compares OLD.marks (before) with NEW.marks (after). Blocks the change if marks decrease.",
+  c:`DELIMITER //
+CREATE TRIGGER before_student_update
+BEFORE UPDATE ON students
+FOR EACH ROW
+BEGIN
+    IF NEW.marks < OLD.marks THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Marks cannot be reduced';
+    END IF;
+END //
+DELIMITER ;
+
+UPDATE students SET marks = 70 WHERE student_id = 1;
+-- ERROR 1644: Marks cannot be reduced (82 -> 70)`,
+  o:"Update rejected. Ravi's marks stay 82.",
+  tip:"Use OLD for the value before the change and NEW for the value after it."},
+ {t:"AFTER UPDATE: log old and new marks",tag:"AFTER · UPDATE",m:"Stores both values after a successful update.",
+  c:`DELIMITER //
+CREATE TRIGGER after_student_update
+AFTER UPDATE ON students
+FOR EACH ROW
+BEGIN
+    INSERT INTO student_log (student_id, action, old_marks, new_marks)
+    VALUES (OLD.student_id, 'UPDATE', OLD.marks, NEW.marks);
+END //
+DELIMITER ;
+
+UPDATE students SET marks = 90 WHERE student_id = 3;
+SELECT * FROM student_log;`,
+  o:"A new log row: action UPDATE, old_marks 55, new_marks 90.",
+  tip:"Both OLD and NEW are available in an UPDATE trigger."},
+ {t:"BEFORE DELETE: block deleting passed students",tag:"BEFORE · DELETE",m:"Uses OLD to check the row that is about to be deleted. OLD is read-only here.",
+  c:`DELIMITER //
+CREATE TRIGGER before_student_delete
+BEFORE DELETE ON students
+FOR EACH ROW
+BEGIN
+    IF OLD.marks >= 40 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Cannot delete a student who has passed';
+    END IF;
+END //
+DELIMITER ;
+
+DELETE FROM students WHERE student_id = 1;
+-- ERROR 1644: Cannot delete a student who has passed`,
+  o:"Ravi (marks 82) cannot be deleted.",
+  tip:"In a DELETE trigger only OLD exists. NEW is not available."},
+ {t:"AFTER DELETE: log the removed row",tag:"AFTER · DELETE",m:"Stores the deleted row's values in the log. Use a student below 40, because the BEFORE DELETE trigger blocks passing students.",
+  c:`DELIMITER //
+CREATE TRIGGER after_student_delete
+AFTER DELETE ON students
+FOR EACH ROW
+BEGIN
+    INSERT INTO student_log (student_id, action, old_marks)
+    VALUES (OLD.student_id, 'DELETE', OLD.marks);
+END //
+DELIMITER ;
+
+INSERT INTO students VALUES (4, 'Kiran', 25, NULL);  -- grade = 'Fail'
+DELETE FROM students WHERE student_id = 4;
+SELECT * FROM student_log;`,
+  o:"Kiran is deleted. student_log gets a DELETE row with old_marks 25.",
+  tip:"OLD holds the row being deleted, so AFTER DELETE can still read its values."}
+];
+document.getElementById("exGrid").innerHTML=EX.map(x=>`
+ <article class="card full" data-search="${esc((x.t+' '+x.m).toLowerCase())}">
+  <div class="card-head"><h3>${esc(x.t)}</h3><span class="tag">${esc(x.tag)}</span></div>
+  <p>${esc(x.m)}</p>
+  <pre><code id="ex-${EX.indexOf(x)}">${esc(x.c)}</code><button class="copy" data-copy="ex-${EX.indexOf(x)}">Copy</button></pre>
+  <div class="out"><b>Result:</b> ${esc(x.o)}</div>
+  <div class="tip">💡 ${esc(x.tip)}</div>
+ </article>`).join('');
+
+/* ---------- 12. Traps ---------- */
+const TRAPS=[
+ {t:"Trigger cannot change its own table",m:"A trigger on students that runs INSERT, UPDATE or DELETE on students fails with error 1442. Write to a different table (like student_log)."},
+ {t:"AFTER cannot change NEW",m:"In an AFTER trigger, SET NEW.marks = ... is an error. Change values in a BEFORE trigger instead."},
+ {t:"TRUNCATE does not fire DELETE triggers",m:"TRUNCATE TABLE removes all rows without firing DELETE triggers. Use DELETE if you need the trigger to run."},
+ {t:"You cannot CALL a trigger",m:"Triggers run automatically on INSERT, UPDATE or DELETE. CALL works only for stored procedures."},
+ {t:"Only row-level in MySQL",m:"MySQL triggers always use FOR EACH ROW. Statement-level triggers are not supported."},
+ {t:"Multiple triggers",m:"Since MySQL 5.7.2 (and in 8.0), one table can have more than one trigger for the same timing and event. Names must be unique in the database."},
+ {t:"No result sets",m:"A trigger cannot return rows to the user with SELECT. Use an INSERT into a log table instead."},
+ {t:"Forgetting DELIMITER",m:"Without DELIMITER // in the command-line client, the trigger body is cut at its first semicolon and CREATE TRIGGER fails."},
+ {t:"Wrong OLD/NEW",m:"INSERT has no OLD. DELETE has no NEW. Using a missing one gives an error."},
+ {t:"Failed statement",m:"If a BEFORE trigger raises SIGNAL, the statement fails and the row is not written. An AFTER trigger cannot stop a change that is already written."}
+];
+document.getElementById("trapGrid").innerHTML=TRAPS.map(x=>`
+ <article class="card" data-search="${esc((x.t+' '+x.m).toLowerCase())}">
+  <div class="card-head"><h3>${esc(x.t)}</h3><span class="tag">trap</span></div>
+  <p>${esc(x.m)}</p>
+ </article>`).join('');
+
+/* ---------- search, theme, progress, nav ---------- */
+document.getElementById("q").addEventListener("input",e=>{
+  const v=e.target.value.trim().toLowerCase();
+  document.querySelectorAll("[data-search]").forEach(el=>el.classList.toggle("hide", v!=="" && !el.dataset.search.includes(v)));
+});
+document.getElementById("theme").addEventListener("click",()=>{
+  const dark=document.documentElement.getAttribute("data-theme")==="dark";
+  if(dark){document.documentElement.removeAttribute("data-theme");document.getElementById("theme").textContent="🌙";}
+  else{document.documentElement.setAttribute("data-theme","dark");document.getElementById("theme").textContent="☀️";}
+});
+document.addEventListener("click",e=>{
+  const c=e.target.closest("[data-copy]");
+  if(c){const txt=document.getElementById(c.dataset.copy).textContent;navigator.clipboard?.writeText(txt).catch(()=>{});c.textContent="Copied ✓";setTimeout(()=>c.textContent="Copy",1200);}
+});
+const SECTIONS=["basics","timing","events","combos","rowlevel","oldnew","syntax","signal","examples","traps","compare","summary"];
+const viewed=new Set();
+function updProg(){
+  document.getElementById("ptext").textContent=`${viewed.size} of ${SECTIONS.length} sections viewed`;
+  document.getElementById("pbar").style.width=(viewed.size/SECTIONS.length*100)+"%";
+}
+updProg();
+const links=[...document.querySelectorAll("nav.side a")];
+const io=new IntersectionObserver(es=>{es.forEach(en=>{
+  if(en.isIntersecting){
+    viewed.add(en.target.id); updProg();
+    links.forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+en.target.id));
+  }
+});},{rootMargin:"-40% 0px -55% 0px"});
+SECTIONS.forEach(id=>io.observe(document.getElementById(id)));
+
+</script>
+</body>
+</html>
