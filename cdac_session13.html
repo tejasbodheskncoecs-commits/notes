@@ -134,6 +134,9 @@ ul.sum li,ol.sum li{margin-bottom:5px}
 .mcq ol{margin:0 0 6px 20px;font-size:14.5px}
 .mcq .ans{display:none;margin-top:6px;font-size:14px;color:var(--ok);font-weight:600}
 .mcq .ans.show{display:block}
+details.qa{border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:8px;background:var(--surface2)}
+details.qa summary{cursor:pointer;font-weight:700;font-size:15px}
+details.qa p{margin:8px 0 0;color:var(--text);font-size:14.5px}
 </style>
 </head>
 <body>
@@ -372,12 +375,23 @@ ul.sum li,ol.sum li{margin-bottom:5px}
             <li>Check v_done right after FETCH, before using the variables.</li>
           </ul></div>
 
-        <div class="card"><div class="card-head"><h3>Interview questions (simple answers)</h3><span class="tag">interview</span></div>
-          <ul class="sum">
-            <li><b>Q:</b> What is a cursor? <b>A:</b> A way to process rows one at a time in a stored program.</li>
-            <li><b>Q:</b> Why is a cursor slow? <b>A:</b> It does row-by-row work in code, not one set-based statement.</li>
-            <li><b>Q:</b> What happens if you FETCH past the end? <b>A:</b> With the handler, v_done is set. Without it, error 1329.</li>
-          </ul></div>
+                <div class="card full"><div class="card-head"><h3>Interview questions (easy answers)</h3><span class="tag">14 questions</span></div>
+          <p>Tap a question to see the answer.</p>
+          <details class="qa"><summary>1. What is a cursor?</summary><p>A cursor is a pointer that reads the rows of a query result one at a time, inside a stored procedure.</p></details>
+          <details class="qa"><summary>2. Why do we use a cursor?</summary><p>When each row needs its own decision or action, for example giving each student a grade based on their own marks.</p></details>
+          <details class="qa"><summary>3. What are the four steps of a cursor, in order?</summary><p>DECLARE, OPEN, FETCH (repeated for each row), then CLOSE.</p></details>
+          <details class="qa"><summary>4. Where can you use a cursor in MySQL?</summary><p>Only inside stored programs: stored procedures, stored functions and triggers.</p></details>
+          <details class="qa"><summary>5. What does FETCH do?</summary><p>It reads the next row into variables and moves the cursor forward by one row. It does not show the row on screen by itself.</p></details>
+          <details class="qa"><summary>6. What is the NOT FOUND handler for?</summary><p>It sets a flag (such as v_done) when no rows are left, so the loop knows when to stop.</p></details>
+          <details class="qa"><summary>7. Why check the done flag right after FETCH?</summary><p>On the empty fetch the variables keep their old values. If you process them first, the last row is handled twice.</p></details>
+          <details class="qa"><summary>8. What happens if you FETCH after the last row with no handler?</summary><p>MySQL raises error 1329 (No data) and the procedure stops.</p></details>
+          <details class="qa"><summary>9. Are cursors fast?</summary><p>Usually not. They handle one row at a time in code, while one SQL statement can process all matching rows together.</p></details>
+          <details class="qa"><summary>10. Are MySQL cursors read-only and scrollable?</summary><p>In MySQL 8.0, stored-program cursors are asensitive, read-only and non-scrollable. They are read-only and cannot move backward.</p></details>
+          <details class="qa"><summary>11. Can a cursor move backward?</summary><p>No. In MySQL the cursor is forward-only (non-scrollable).</p></details>
+          <details class="qa"><summary>12. LOOP or WHILE with a cursor?</summary><p>Both work. LOOP is the natural choice when the number of rows is unknown, because you exit with LEAVE. WHILE checks its condition before each run.</p></details>
+          <details class="qa"><summary>13. Cursor vs SELECT: what is the difference?</summary><p>SELECT returns all the rows at once. A cursor reads them one at a time, inside a procedure.</p></details>
+          <details class="qa"><summary>14. When should you avoid a cursor?</summary><p>When one UPDATE, INSERT or SELECT can do the whole job, especially with large amounts of data.</p></details>
+        </div>
 
         <div class="card full"><div class="card-head"><h3>Important MySQL cursor rules for MCQs</h3><span class="tag">must know</span></div>
           <ul class="sum">
