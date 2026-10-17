@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CDAC DBT Session 13 — Cursors</title>
+<style>
+
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#f0f3f9; --text:#1b2333; --muted:#5d6779;
+  --accent:#4f46e5; --accent2:#0ea5a4; --ok:#16a34a; --bad:#dc2626; --warn:#f59e0b;
+  --code-bg:#0f172a; --code-text:#e2e8f0; --border:#e3e7ef; --shadow:0 6px 24px rgba(15,23,42,.07);
+  --radius:16px;
+}
+[data-theme="dark"]{
+  --bg:#0b1020; --surface:#131a2e; --surface2:#1a2340; --text:#e6ebf5; --muted:#9aa6bf;
+  --accent:#818cf8; --accent2:#2dd4bf; --border:#26304d; --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:1200px;margin:auto;display:flex;align-items:center;gap:14px;padding:12px 18px}
+.brand{font-weight:800;letter-spacing:-.2px;display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px}
+.search{flex:1;max-width:420px;position:relative;margin-left:auto}
+.search input{width:100%;padding:10px 14px 10px 38px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit;outline:none}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.search::before{content:"⌕";position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:18px}
+.iconbtn{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:12px;padding:9px 12px;cursor:pointer;font:inherit}
+.iconbtn:hover{border-color:var(--accent)}
+.wrap{max-width:1200px;margin:auto;display:grid;grid-template-columns:240px 1fr;gap:28px;padding:24px 18px 80px}
+nav.side{position:sticky;top:84px;align-self:start}
+nav.side a{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;color:var(--muted);text-decoration:none;font-weight:600;font-size:14.5px;margin-bottom:4px}
+nav.side a:hover,nav.side a.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+nav.side .count{font-size:12px;background:var(--surface2);padding:2px 8px;border-radius:999px}
+.progress-card{margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.bar{height:8px;background:var(--surface2);border-radius:999px;overflow:hidden;margin-top:8px}
+.bar>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+main{min-width:0}
+.hero{background:linear-gradient(135deg,#4f46e5,#0ea5a4);color:#fff;border-radius:22px;padding:34px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 8px;font-size:clamp(24px,4vw,36px);letter-spacing:-.6px}
+.hero p{margin:0;opacity:.92;max-width:680px}
+.hero .chips{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+.hero .chip{background:rgba(255,255,255,.18);padding:6px 12px;border-radius:999px;font-size:13px}
+section.part{margin-top:44px;scroll-margin-top:84px}
+section.part>h2{font-size:24px;letter-spacing:-.4px;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h3{margin:0;font-size:18px;font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--accent)}
+.tag{font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:3px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);font-weight:700}
+.card p{margin:0;font-size:14.5px;color:var(--muted)}
+.card p b{color:var(--text)}
+.full{grid-column:1/-1}
+pre{margin:0;background:var(--code-bg);color:var(--code-text);padding:12px 14px;border-radius:12px;overflow-x:auto;font:13px/1.6 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;position:relative;white-space:pre}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.out{background:color-mix(in srgb,var(--ok) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--ok) 40%,transparent);border-radius:12px;padding:10px 12px;font:13.5px "JetBrains Mono",ui-monospace,monospace;color:var(--text);white-space:pre-wrap}
+.tip{font-size:13.5px;background:color-mix(in srgb,var(--warn) 14%,var(--surface));border-left:3px solid var(--warn);padding:8px 12px;border-radius:10px;color:var(--text)}
+.learned{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.learned input{accent-color:var(--ok);width:16px;height:16px}
+.hide{display:none!important}
+.copy{position:absolute;top:8px;right:8px;font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;cursor:pointer}
+.copy:hover{color:#fff}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+.slider-row{display:flex;align-items:center;gap:14px;margin:10px 0}
+input[type=range]{flex:1;accent-color:var(--accent)}
+select{padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit}
+.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.rung{padding:12px 8px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);text-align:center;font-size:13.5px;transition:all .25s}
+.rung small{display:block;color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:12px}
+.rung.hit{background:color-mix(in srgb,var(--ok) 18%,var(--surface));border-color:var(--ok);font-weight:700}
+.rung.skip{opacity:.5}
+.result{font-size:24px;font-weight:800;margin-top:6px}
+.trace{background:var(--code-bg);color:var(--code-text);border-radius:12px;padding:12px 14px;font:13px/1.7 "JetBrains Mono",ui-monospace,monospace;min-height:150px;max-height:260px;overflow:auto;white-space:pre-wrap}
+.trace .now{color:#fde047}
+.vars{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.var{padding:8px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);font-family:"JetBrains Mono",monospace;font-size:14px}
+.var b{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:var(--surface2);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.q{padding:4px 0}
+.q h4{margin:0 0 10px;font-size:16px;line-height:1.5}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font:inherit}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:color-mix(in srgb,var(--ok) 18%,var(--surface));border-color:var(--ok)}
+.opt.wrong{background:color-mix(in srgb,var(--bad) 16%,var(--surface));border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.feedback{font-size:14px;margin-top:8px;color:var(--muted);min-height:20px}
+.score{font-size:28px;font-weight:800;margin-top:12px}
+footer{margin-top:60px;color:var(--muted);font-size:13px;text-align:center}
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  nav.side{position:static;display:flex;overflow-x:auto;gap:6px;padding-bottom:6px}
+  nav.side a{white-space:nowrap;margin:0}
+  .progress-card,.search{display:none}
+  .ladder{grid-template-columns:repeat(2,1fr)}
+}
+
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:12px 0}
+.fstep{padding:10px 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);font-size:13.5px;flex:1 1 150px;text-align:center;opacity:.6;transition:all .25s}
+.fstep.on{opacity:1;border-color:var(--accent);font-weight:700}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer;font:inherit;font-size:13.5px;font-weight:600}
+.seg button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;margin-left:6px}
+.b-yes{background:color-mix(in srgb,var(--ok) 18%,var(--surface));color:var(--ok)}
+.b-no{background:color-mix(in srgb,var(--bad) 16%,var(--surface));color:var(--bad)}
+.b-note{background:color-mix(in srgb,var(--warn) 18%,var(--surface));color:var(--text)}
+.table-data td{vertical-align:top}
+.rowtable td.cur{background:color-mix(in srgb,var(--accent) 18%,var(--surface));font-weight:700}
+.rowtable td.done{opacity:.5}
+.vars{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.var{padding:8px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);font-family:"JetBrains Mono",monospace;font-size:14px}
+.var b{color:var(--accent)}
+.msg{font-family:"JetBrains Mono",monospace;font-size:14px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--surface2)}
+.msg.warn{color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+.msg.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface))}
+.lab-meta{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:8px}
+.note-line{font-size:14.5px;margin:6px 0}
+ul.sum,ol.sum{margin:6px 0 0 18px;padding:0;font-size:14.5px}
+ul.sum li,ol.sum li{margin-bottom:5px}
+.mcq{padding:10px 0;border-bottom:1px solid var(--border)}
+.mcq:last-child{border-bottom:none}
+.mcq h4{margin:0 0 8px;font-size:15px}
+.mcq ol{margin:0 0 6px 20px;font-size:14.5px}
+.mcq .ans{display:none;margin-top:6px;font-size:14px;color:var(--ok);font-weight:600}
+.mcq .ans.show{display:block}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><div class="logo">CU</div><span>CDAC DBT · Session 13</span></div>
+    <div class="search"><input id="q" type="search" placeholder="Search FETCH, NOT FOUND, DECLARE…" aria-label="Search"></div>
+    <button class="iconbtn" id="theme" title="Toggle dark mode">🌙</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="side">
+    <a href="#intro">1. Introduction</a>
+    <a href="#lifecycle">2. Cursor lifecycle</a>
+    <a href="#types">3. Types of cursors</a>
+    <a href="#realworld">4. Real-world examples</a>
+    <a href="#labs">Practical labs (1–5)</a>
+    <a href="#rules">Stored procedure rules</a>
+    <a href="#confusions">Beginner confusions</a>
+    <a href="#exam">Exam preparation</a>
+    <div class="progress-card">
+      <div style="font-weight:700;font-size:14px">Your progress</div>
+      <div style="font-size:13px;color:var(--muted)" id="ptext"></div>
+      <div class="bar"><div id="pbar"></div></div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <h1>Cursors in MySQL</h1>
+      <p>A cursor lets a stored procedure read a query result one row at a time. This page starts with the basic idea, then builds up to complete, runnable labs.</p>
+      <div class="chips" style="margin-top:18px"><span class="chip">4 lifecycle steps</span><span class="chip">Live FETCH simulator</span><span class="chip">5 labs with code</span><span class="chip">20-question MCQ set</span></div>
+    </div>
+
+    <!-- ===================== 1. INTRO ===================== -->
+    <section class="part" id="intro">
+      <h2>1. Introduction to cursors</h2>
+      <p class="lead">Start here. Do not skip this part, because every later topic depends on it.</p>
+
+      <div class="grid">
+        <div class="card full">
+          <div class="card-head"><h3>What is a cursor?</h3><span class="tag">basic meaning</span></div>
+          <p>A query such as <code>SELECT name, marks FROM students</code> returns a <b>result set</b>: a list of rows. Normally, SQL hands you the whole list at once.</p>
+          <p>A <b>cursor</b> is a pointer that moves through that result set <b>one row at a time</b>. You use it inside a <b>stored procedure</b>, where you can write code (IF, LOOP, variables) that handles each row.</p>
+          <div class="out"><b>Analogy:</b> the result set is a book with 6 pages. A cursor is a bookmark. You open the book, turn one page at a time (FETCH), read the page, and stop when the book ends.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Why do we need cursors?</h3><span class="tag">why</span></div>
+          <p>Some tasks need <b>row-by-row decisions</b>. For example: give each student a grade based on their own marks, or send a message to each student who failed.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Why not always a normal SELECT?</h3><span class="tag">limit</span></div>
+          <p>A normal SELECT returns the rows, but it cannot run IF/ELSE logic on each row, store a value per row in variables, or run custom code for each row. A cursor gives you that per-row control.</p>
+        </div>
+      </div>
+
+      <h3 style="margin:22px 0 8px;font-size:18px">Normal SELECT vs cursor</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Point</th><th>Normal SELECT</th><th>Cursor</th></tr>
+          <tr><td>Where it runs</td><td>Anywhere (a query window, a program)</td><td>Only inside a stored procedure (or function/trigger)</td></tr>
+          <tr><td>How rows are returned</td><td>All rows as one result set</td><td>One row at a time, on each FETCH</td></tr>
+          <tr><td>Per-row logic</td><td>Not possible (except CASE inside the query)</td><td>Yes, with IF, variables and loops</td></tr>
+          <tr><td>Typical speed</td><td>Fast (set-based)</td><td>Slower for large data</td></tr>
+          <tr><td>Best for</td><td>Filtering, joining, summarising</td><td>Row-by-row processing with custom logic</td></tr>
+        </table>
+      </div>
+
+      <div class="grid" style="margin-top:14px">
+        <div class="card"><div class="card-head"><h3>Advantages</h3><span class="tag">pros</span></div>
+          <ul class="sum"><li>Process rows one by one with custom logic.</li><li>Keep row-by-row logic inside the database.</li><li>Easy to read for beginners who think step by step.</li></ul></div>
+        <div class="card"><div class="card-head"><h3>Disadvantages</h3><span class="tag">cons</span></div>
+          <ul class="sum"><li>Usually slower than one set-based statement.</li><li>More code (DECLARE, OPEN, FETCH, CLOSE, handler).</li><li>Easy to make mistakes at the end of the data.</li></ul></div>
+        <div class="card full"><div class="card-head"><h3>Practical use cases</h3><span class="tag">examples</span></div>
+          <p>Grade calculation per student, bank interest for each account, sending reminders row by row, checking stock and reordering item by item, and salary processing for each employee.</p></div>
+      </div>
+    </section>
+
+    <!-- ===================== 2. LIFECYCLE ===================== -->
+    <section class="part" id="lifecycle">
+      <h2>2. Cursor lifecycle: DECLARE → OPEN → FETCH → CLOSE</h2>
+      <p class="lead">Every cursor follows these four steps in this order. Select a step to see its analogy, syntax, and common mistakes.</p>
+
+      <div class="panel">
+        <div class="seg" id="lcSeg">
+          <button class="on" data-s="0">1. DECLARE</button>
+          <button data-s="1">2. OPEN</button>
+          <button data-s="2">3. FETCH</button>
+          <button data-s="3">4. CLOSE</button>
+        </div>
+        <div class="flow" id="lcFlow">
+          <div class="fstep">DECLARE<br><small>define the query</small></div>
+          <div class="fstep">OPEN<br><small>run the query</small></div>
+          <div class="fstep">FETCH (repeat)<br><small>read one row</small></div>
+          <div class="fstep">CLOSE<br><small>release the cursor</small></div>
+        </div>
+        <div id="lcBody"></div>
+      </div>
+
+      <h3 style="margin:24px 0 8px;font-size:18px">Live FETCH simulator</h3>
+      <p class="lead">Each press of FETCH moves the cursor to the next row. Watch what happens after the last row.</p>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between">
+          <div class="row"><button class="btn primary" id="fBtn">FETCH</button><button class="btn" id="fReset">Reset</button></div>
+          <span class="badge b-note" id="fCount">Rows fetched: 0</span>
+        </div>
+        <div class="tablewrap" style="margin-top:12px;box-shadow:none">
+          <table class="rowtable">
+            <tr><th>student_id</th><th>name</th><th>marks</th></tr>
+            <tbody id="fRows"></tbody>
+          </table>
+        </div>
+        <div class="vars">
+          <div class="var"><b>v_name</b> = <span id="vName">NULL</span></div>
+          <div class="var"><b>v_marks</b> = <span id="vMarks">NULL</span></div>
+          <div class="var"><b>v_done</b> = <span id="vDone">FALSE</span></div>
+        </div>
+        <div class="msg" id="fMsg">Cursor is open, positioned before the first row.</div>
+      </div>
+    </section>
+
+    <!-- ===================== 3. TYPES ===================== -->
+    <section class="part" id="types">
+      <h2>3. Types of cursors</h2>
+      <div class="panel" style="margin-bottom:16px">
+        <p style="margin:0 0 8px"><b>Important:</b> sensitivity, updateability and scrolling are <b>three separate properties</b>, not four mutually exclusive types. A single cursor has one value for each property. The four concepts below describe those properties.</p>
+        <div class="tablewrap" style="box-shadow:none">
+          <table>
+            <tr><th>Property</th><th>Question it answers</th><th>Concepts</th></tr>
+            <tr><td>Sensitivity</td><td>Does it see changes made to the table after it was opened?</td><td>Asensitive, Insensitive</td></tr>
+            <tr><td>Updateability</td><td>Can rows be updated through the cursor?</td><td>Read-only (or updatable)</td></tr>
+            <tr><td>Scrolling</td><td>Can it move backwards or jump, or only forward?</td><td>Non-scrollable (or scrollable)</td></tr>
+          </table>
+        </div>
+        <div class="msg warn" style="margin-top:12px"><b>MySQL 8.0 rule:</b> stored-program cursors are <b>asensitive, read-only and non-scrollable</b>. In a normal stored procedure you cannot explicitly choose INSENSITIVE or SCROLL. The insensitive idea is only a concept to understand.</div>
+      </div>
+
+      <div class="seg" id="tySeg" style="margin-bottom:14px">
+        <button class="on" data-t="0">Asensitive</button>
+        <button data-t="1">Insensitive</button>
+        <button data-t="2">Read-only</button>
+        <button data-t="3">Non-scrollable</button>
+      </div>
+      <div class="grid" id="tyGrid"></div>
+    </section>
+
+    <!-- ===================== 4. REAL WORLD ===================== -->
+    <section class="part" id="realworld">
+      <h2>4. Real-world cursor examples</h2>
+      <p class="lead">Each example shows when a cursor helps and when a normal SQL statement is the better choice.</p>
+      <div class="grid" id="rwGrid"></div>
+      <h3 style="margin:22px 0 8px;font-size:18px">When to use a cursor, and when not to</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Use a cursor when…</th><th>Use a normal SQL statement when…</th></tr>
+          <tr><td>Each row needs its own IF/ELSE decision that a query cannot express.</td><td>One UPDATE, INSERT or SELECT can do the whole job.</td></tr>
+          <tr><td>You must call a procedure or write a log per row.</td><td>The data is large and speed matters.</td></tr>
+          <tr><td>The steps for each row depend on earlier rows.</td><td>A CASE expression inside one query is enough.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== LABS ===================== -->
+    <section class="part" id="labs">
+      <h2>Practical labs</h2>
+      <p class="lead">Run the Lab 1 setup first. Labs 2 to 5 use the same students table. Each lab shows the code, the sample data, the expected output, the execution flow, and common errors.</p>
+      <div class="grid" id="labGrid"></div>
+    </section>
+
+    <!-- ===================== RULES ===================== -->
+    <section class="part" id="rules">
+      <h2>3. Important MySQL stored procedure rules</h2>
+      <div class="grid" id="ruleGrid"></div>
+      <div class="tablewrap" style="margin-top:14px">
+        <table>
+          <tr><th>Declaration order inside BEGIN…END</th><th>Why</th></tr>
+          <tr><td>1. Variables (DECLARE v_name ...)</td><td>Variables must exist before anything uses them.</td></tr>
+          <tr><td>2. Cursors (DECLARE cur CURSOR FOR ...)</td><td>A cursor query can use variables declared above.</td></tr>
+          <tr><td>3. Handlers (DECLARE CONTINUE HANDLER ...)</td><td>A handler can refer to variables and cursors declared above.</td></tr>
+          <tr><td>4. Executable statements (SET, OPEN, FETCH, IF, ...)</td><td>All declarations must come before any statement that runs.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== CONFUSIONS ===================== -->
+    <section class="part" id="confusions">
+      <h2>Common beginner confusions</h2>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Pair</th><th>Key difference</th></tr>
+          <tr><td>Cursor vs SELECT</td><td>SELECT returns all rows at once. A cursor reads them one at a time inside a procedure.</td></tr>
+          <tr><td>Cursor vs stored procedure</td><td>A procedure is the container with the code. A cursor is one tool used inside it.</td></tr>
+          <tr><td>Cursor vs loop</td><td>The cursor gives the rows. The LOOP (or WHILE) repeats the code that handles each row.</td></tr>
+          <tr><td>DECLARE vs OPEN</td><td>DECLARE only defines the cursor and its query. OPEN runs the query and prepares the rows.</td></tr>
+          <tr><td>OPEN vs FETCH</td><td>OPEN happens once. FETCH happens once per row.</td></tr>
+          <tr><td>FETCH vs SELECT</td><td>FETCH reads the next row of an open cursor into variables. SELECT returns rows to the user.</td></tr>
+          <tr><td>LOOP vs WHILE</td><td>LOOP runs until you LEAVE. WHILE checks its condition before each run.</td></tr>
+        </table>
+      </div>
+
+      <div class="grid" style="margin-top:14px">
+        <div class="card"><div class="card-head"><h3>Why a NOT FOUND handler?</h3><span class="tag">essential</span></div>
+          <p>When there are no more rows, FETCH does not change the variables. Without a handler, MySQL raises error 1329 and the procedure stops. The handler catches the NOT FOUND condition and sets a flag so your code can leave the loop.</p></div>
+        <div class="card"><div class="card-head"><h3>FETCH after the last row</h3><span class="tag">what happens</span></div>
+          <p>With the handler: the flag <code>v_done</code> becomes TRUE and the procedure continues. Without it: error 1329 "No data - zero rows fetched" stops the procedure. The variables keep the last values that were fetched.</p></div>
+        <div class="card"><div class="card-head"><h3>Why doesn't a cursor print records?</h3><span class="tag">important</span></div>
+          <p>FETCH only copies the row into variables. Nothing is shown to the user. To display data, use a SELECT inside the loop, as in the labs.</p></div>
+        <div class="card"><div class="card-head"><h3>Why are cursors often slower?</h3><span class="tag">performance</span></div>
+          <p>A cursor handles rows one at a time in procedural code. One set-based statement lets the database process all matching rows in an optimised way.</p></div>
+      </div>
+    </section>
+
+    <!-- ===================== EXAM ===================== -->
+    <section class="part" id="exam">
+      <h2>5. CDAC exam preparation</h2>
+
+      <div class="grid">
+        <div class="card full"><div class="card-head"><h3>Important theory questions</h3><span class="tag">revise</span></div>
+          <ol class="sum">
+            <li>What is a cursor, and why is it used only in stored programs?</li>
+            <li>Explain the four lifecycle steps in order.</li>
+            <li>What is the role of DECLARE CONTINUE HANDLER FOR NOT FOUND?</li>
+            <li>Why is the done flag checked right after FETCH?</li>
+            <li>Why are MySQL stored-program cursors asensitive, read-only and non-scrollable?</li>
+            <li>Why is a LOOP the natural choice when the number of rows is unknown?</li>
+          </ol></div>
+
+        <div class="card"><div class="card-head"><h3>Short revision notes</h3><span class="tag">quick</span></div>
+          <ul class="sum">
+            <li>Cursor = pointer to a result set, one row per FETCH.</li>
+            <li>Order: DECLARE → OPEN → FETCH (repeat) → CLOSE.</li>
+            <li>Handler sets v_done when no row is left.</li>
+            <li>Check v_done right after FETCH, before using the variables.</li>
+          </ul></div>
+
+        <div class="card"><div class="card-head"><h3>Interview questions (simple answers)</h3><span class="tag">interview</span></div>
+          <ul class="sum">
+            <li><b>Q:</b> What is a cursor? <b>A:</b> A way to process rows one at a time in a stored program.</li>
+            <li><b>Q:</b> Why is a cursor slow? <b>A:</b> It does row-by-row work in code, not one set-based statement.</li>
+            <li><b>Q:</b> What happens if you FETCH past the end? <b>A:</b> With the handler, v_done is set. Without it, error 1329.</li>
+          </ul></div>
+
+        <div class="card full"><div class="card-head"><h3>Important MySQL cursor rules for MCQs</h3><span class="tag">must know</span></div>
+          <ul class="sum">
+            <li>Cursors work only inside stored procedures, functions and triggers.</li>
+            <li>MySQL stored-program cursors are asensitive, read-only and non-scrollable.</li>
+            <li>Declare order: variables, then cursors, then handlers.</li>
+            <li>A cursor must be OPENed before FETCH, and CLOSEd when finished.</li>
+            <li>DECLARE CONTINUE HANDLER FOR NOT FOUND sets the flag at end of data.</li>
+            <li>Loop labels and nested BEGIN…END blocks are allowed.</li>
+          </ul></div>
+      </div>
+
+      <h3 style="margin:24px 0 8px;font-size:18px">20 CDAC-level MCQs</h3>
+      <p class="lead">Choose an option to see the answer and explanation. Options are shuffled each time you restart.</p>
+      <div class="panel" id="quizbox"></div>
+    </section>
+
+    <footer>CDAC DBT — Session 13 · MySQL 8.0 syntax · Based on the DBT Session 13 cursors notes</footer>
+  </main>
+</div>
+<script>
+/* ---------- Shared lab setup ---------- */
+const SETUP = `CREATE DATABASE IF NOT EXISTS college;
+USE college;
+
+DROP TABLE IF EXISTS students;
+CREATE TABLE students (
+    student_id INT PRIMARY KEY,
+    name       VARCHAR(50) NOT NULL,
+    marks      INT NOT NULL
+);
+
+INSERT INTO students (student_id, name, marks) VALUES
+(1, 'Asha',  82),
+(2, 'Ravi',  74),
+(3, 'Meena', 55),
+(4, 'Kiran', 35),
+(5, 'Priya', 91),
+(6, 'Arjun', 60);
+
+SELECT * FROM students ORDER BY student_id;`;
+
+const SAMPLE = [[1,'Asha',82],[2,'Ravi',74],[3,'Meena',55],[4,'Kiran',35],[5,'Priya',91],[6,'Arjun',60]];
+
+/* ---------- Lifecycle steps ---------- */
+const LIFE = [
+ {t:"DECLARE", def:"Defines the cursor and the SELECT query it will use. Nothing runs yet.",
+  ana:"Writing the name of a book you plan to read on a note. Nothing is opened yet.",
+  syn:"DECLARE cursor_name CURSOR FOR select_statement;",
+  code:"DECLARE cur CURSOR FOR\n    SELECT name, marks FROM students ORDER BY student_id;",
+  lines:["DECLARE — starts a declaration.","cur — the cursor name you choose.","CURSOR FOR — says this name is a cursor for the query that follows.","SELECT … ORDER BY student_id — the rows the cursor will walk through, in a fixed order."],
+  internal:"MySQL stores the query. It does not read any rows yet.",
+  mistakes:["Declaring the cursor after its handler or after a variable (order error).","Forgetting FOR after CURSOR.","Thinking DECLARE runs the query. It does not; OPEN does."]},
+ {t:"OPEN", def:"Runs the cursor's query and prepares the result so rows can be fetched in order.",
+  ana:"Opening the book at the first page. The book is now ready to read.",
+  syn:"OPEN cursor_name;",
+  code:"OPEN cur;",
+  lines:["OPEN — starts the cursor.","cur — the cursor declared earlier."],
+  internal:"The query runs. MySQL prepares the rows (or a way to read them) and positions the cursor before the first row.",
+  mistakes:["FETCH before OPEN — the cursor is not ready.","Opening the same cursor twice (error 1325 'Cursor is already open').","Forgetting that OPEN is needed in every procedure call."]},
+ {t:"FETCH", def:"Reads the next row into variables and moves the cursor forward by one row.",
+  ana:"Turning one page of the book and reading the line you see. You repeat this for every page.",
+  syn:"FETCH cursor_name INTO var1, var2;",
+  code:"FETCH cur INTO v_name, v_marks;",
+  lines:["FETCH — read the next row.","cur — the open cursor.","INTO v_name, v_marks — store the row's name and marks in these variables. The number and order of variables must match the SELECT columns."],
+  internal:"If a row exists, its values are copied into the variables and the cursor moves on. If there is no row, MySQL raises the NOT FOUND condition and the variables keep their old values.",
+  mistakes:["Using a variable count different from the SELECT column count.","Processing the variables before checking for end of data.","Expecting FETCH to show the row on screen. It only copies it into variables."]},
+ {t:"CLOSE", def:"Releases the cursor and its resources when you are done.",
+  ana:"Closing the book and putting it back on the shelf.",
+  syn:"CLOSE cursor_name;",
+  code:"CLOSE cur;",
+  lines:["CLOSE — end the cursor.","cur — the cursor to close."],
+  internal:"MySQL frees the rows and resources held by the cursor. The cursor can be declared and opened again in a later call.",
+  mistakes:["Forgetting CLOSE. The procedure still ends, but the cursor is not released properly in your code.","Closing a cursor that was never opened (error 1324 'Cursor is not open')."]}
+];
+
+/* ---------- Cursor property concepts ---------- */
+const TYPES = [
+ {t:"Asensitive", def:"The cursor may or may not show changes made to the table after the cursor was opened. The server is free to decide.",
+  status:"MySQL 8.0: YES — all stored-program cursors are asensitive.",
+  ex:["A photo taken on a phone: it may or may not show what changes after you took it.","A class attendance sheet that a teacher may or may not update while students read it."],
+  scen:"A procedure reads students' marks. If another user changes a mark while the cursor is open, the cursor may or may not show the new mark.",
+  comp:"Asensitive vs Insensitive: asensitive has no promise about changes; insensitive promises a frozen snapshot.",
+  mem:"ASENSE = 'no sense of change' — it does not promise to notice.",
+  mcq:{q:"In MySQL 8.0, which sensitivity property do stored-program cursors have?", o:["Insensitive","Asensitive","Sensitive and updatable","Scroll-sensitive"], a:1, e:"MySQL stored-program cursors are asensitive. Insensitive cannot be explicitly chosen."}},
+ {t:"Insensitive", def:"A concept: the cursor works on a snapshot (copy) taken when it is opened, so later changes to the table are not seen. MySQL 8.0 does not let you declare it explicitly in a normal stored procedure.",
+  status:"MySQL 8.0: NO — you cannot explicitly declare INSENSITIVE in a stored procedure. Understand it as a concept only.",
+  ex:["A printed copy of a notice board: it does not change when the board is updated.","A saved screenshot of exam marks taken at 10 AM."],
+  scen:"A report generated at 10 AM should show the marks as they were at that time, even if an admin edits them at 11 AM. That is the idea of insensitivity.",
+  comp:"Insensitive vs Asensitive: insensitive promises a snapshot; asensitive makes no promise.",
+  mem:"INSENSITIVE = 'Ignores later changes' — a frozen photo.",
+  mcq:{q:"Which cursor works on a snapshot taken when it is opened?", o:["Asensitive","Insensitive","Read-only","Non-scrollable"], a:1, e:"An insensitive cursor uses a snapshot. Asensitive makes no such promise."}},
+ {t:"Read-only", def:"The cursor can read rows, but rows cannot be updated through the cursor itself.",
+  status:"MySQL 8.0: YES — stored-program cursors are read-only.",
+  ex:["Reading a library book: you can read it, but you cannot write in it.","A bank statement you can read but not edit."],
+  scen:"A program lists every student's marks through a cursor. To change marks, it runs a separate UPDATE statement for each student id.",
+  comp:"Read-only vs Updatable: read-only only lets you read through the cursor; updatable would let you change the current row.",
+  mem:"READ-ONLY = 'Look, don't touch'.",
+  mcq:{q:"If a cursor is read-only, what can the procedure do through it?", o:["Only read rows through the cursor","Update the current row through the cursor","Delete the current row using CURRENT OF","Move backwards through rows"], a:0, e:"Read-only means rows are read through the cursor. Changes must use a separate UPDATE or DELETE."}},
+ {t:"Non-scrollable", def:"The cursor can move only forward, one row at a time. It cannot go back to a previous row or jump to a chosen row.",
+  status:"MySQL 8.0: YES — stored-program cursors are non-scrollable.",
+  ex:["A conveyor belt: items move forward only.","Reading a DVD from start to end without rewinding."],
+  scen:"A procedure checks each student once from top to bottom to assign grades. It never needs to go back to student 1 after student 2, so a forward-only cursor is enough.",
+  comp:"Non-scrollable vs Scrollable: non-scrollable goes forward only; scrollable could move backward or jump.",
+  mem:"NON-SCROLL = 'No going back' — one way, like a conveyor belt.",
+  mcq:{q:"What does a non-scrollable cursor allow?", o:["Moving to the previous row","Moving forward only, one row at a time","Jumping to row 10 directly","Updating rows backwards"], a:1, e:"Non-scrollable means forward-only. Scrollable cursors (not available in MySQL stored programs) could go back."}}
+];
+
+/* ---------- Real-world examples ---------- */
+const RW = [
+ {t:"College student marks and grades", use:"Give each student a grade from their own marks, then print a report line for each student.", cursor:"Yes — each student needs an IF/ELSE decision and a printed line.", normal:"A CASE in one SELECT can also give grades, so a cursor is not always needed for simple grading."},
+ {t:"Bank account processing", use:"Add monthly interest to each savings account, and write a transaction log row for each account.", cursor:"Yes — each account needs its own calculation and log entry.", normal:"A single UPDATE can add interest to all accounts when the same rule applies to every account."},
+ {t:"Product inventory", use:"Check each product's stock; if it is below its reorder level, create a purchase request for that product.", cursor:"Yes — the action depends on each product's own stock.", normal:"A single INSERT ... SELECT can create requests for all low-stock products in one statement."},
+ {t:"Employee salary processing", use:"Calculate each employee's salary using their own grade and allowances, then store the result.", cursor:"Yes — each employee has different rules and allowances.", normal:"If every employee gets the same percentage raise, one UPDATE is faster and simpler."}
+];
+
+/* ---------- Labs ---------- */
+const LABS = [
+ {t:"Lab 1 — Basic cursor (DECLARE, OPEN, FETCH, CLOSE)",
+  goal:"Create a table, insert sample data, and fetch the first two rows one at a time.",
+  code:`DROP PROCEDURE IF EXISTS lab1_basic_cursor;
+DELIMITER //
+CREATE PROCEDURE lab1_basic_cursor()
+BEGIN
+    DECLARE v_name  VARCHAR(50);
+    DECLARE v_marks INT;
+    DECLARE cur CURSOR FOR
+        SELECT name, marks FROM students ORDER BY student_id;
+
+    OPEN cur;
+    FETCH cur INTO v_name, v_marks;
+    SELECT CONCAT('1st row: ', v_name, ' - ', v_marks) AS result;
+
+    FETCH cur INTO v_name, v_marks;
+    SELECT CONCAT('2nd row: ', v_name, ' - ', v_marks) AS result;
+
+    CLOSE cur;
+END //
+DELIMITER ;
+
+CALL lab1_basic_cursor();`,
+  input:"Students table (run the setup first). Sample rows: see the table at the top of this lab.",
+  output:"result\n1st row: Asha - 82\n\nresult\n2nd row: Ravi - 74",
+  flow:["Setup creates the students table and inserts 6 rows.","DECLARE creates v_name, v_marks and the cursor cur (query stored, not run).","OPEN runs the query, ordered by student_id.","First FETCH copies row 1 (Asha, 82) into the variables.","SELECT shows the first row.","Second FETCH copies row 2 (Ravi, 74). SELECT shows it.","CLOSE releases the cursor."],
+  errors:["Error 1054 'Unknown column': the column name in the cursor SELECT is wrong. Check spelling against the table.","Error 1324 'Cursor is not open': you FETCH before OPEN. Move OPEN above FETCH.","CALL fails with 'procedure does not exist': the CREATE PROCEDURE block did not run. Check the DELIMITER lines."]},
+ {t:"Lab 2 — Cursor with LOOP (names and marks)",
+  goal:"Process all students one by one, using a LOOP that stops at the end of data.",
+  code:`DROP PROCEDURE IF EXISTS lab2_loop_names;
+DELIMITER //
+CREATE PROCEDURE lab2_loop_names()
+BEGIN
+    DECLARE v_name  VARCHAR(50);
+    DECLARE v_marks INT;
+    DECLARE v_done  BOOLEAN DEFAULT FALSE;
+    DECLARE cur CURSOR FOR
+        SELECT name, marks FROM students ORDER BY student_id;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = TRUE;
+
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO v_name, v_marks;
+        IF v_done THEN
+            LEAVE read_loop;
+        END IF;
+        SELECT v_name AS student_name, v_marks AS marks;
+    END LOOP read_loop;
+    CLOSE cur;
+END //
+DELIMITER ;
+
+CALL lab2_loop_names();`,
+  input:"Students table with 6 rows (see Lab 1).",
+  output:"Six result sets, one per student:\nAsha 82\nRavi 74\nMeena 55\nKiran 35\nPriya 91\nArjun 60",
+  flow:["DECLARE variables and v_done (FALSE).","DECLARE cursor and the NOT FOUND handler.","OPEN the cursor. LOOP starts.","FETCH row. If no row exists, the handler sets v_done = TRUE.","IF v_done → LEAVE the loop. Otherwise show the row.","Repeat until v_done is TRUE. CLOSE the cursor."],
+  errors:["Infinite loop: no LEAVE, or v_done never set. Check the handler and the IF v_done check.","Only one row shown: the SELECT is placed before the v_done check, or outside the loop.","Error 1337 'Variable or condition declaration after cursor or handler declaration': a DECLARE is placed after the cursor. Move variables up."]},
+ {t:"Lab 3 — Cursor with conditions (grades)",
+  goal:"Use IF/ELSEIF to assign a grade for each student from marks.",
+  code:`DROP PROCEDURE IF EXISTS lab3_grades;
+DELIMITER //
+CREATE PROCEDURE lab3_grades()
+BEGIN
+    DECLARE v_name  VARCHAR(50);
+    DECLARE v_marks INT;
+    DECLARE v_grade VARCHAR(15);
+    DECLARE v_done  BOOLEAN DEFAULT FALSE;
+    DECLARE cur CURSOR FOR
+        SELECT name, marks FROM students ORDER BY student_id;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = TRUE;
+
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO v_name, v_marks;
+        IF v_done THEN
+            LEAVE read_loop;
+        END IF;
+
+        IF v_marks >= 75 THEN
+            SET v_grade = 'Distinction';
+        ELSEIF v_marks >= 60 THEN
+            SET v_grade = 'First Class';
+        ELSEIF v_marks >= 40 THEN
+            SET v_grade = 'Pass';
+        ELSE
+            SET v_grade = 'Fail';
+        END IF;
+
+        SELECT v_name AS student_name, v_marks AS marks, v_grade AS grade;
+    END LOOP read_loop;
+    CLOSE cur;
+END //
+DELIMITER ;
+
+CALL lab3_grades();`,
+  input:"Students table (see Lab 1).",
+  output:"Asha 82 Distinction\nRavi 74 First Class\nMeena 55 Pass\nKiran 35 Fail\nPriya 91 Distinction\nArjun 60 First Class",
+  flow:["FETCH reads one student's name and marks.","The done check runs first, so an empty fetch does not get graded.","The IF/ELSEIF chain checks the highest rule first, then picks the first TRUE branch.","The grade is shown with the name and marks.","The loop repeats until the end of data."],
+  errors:["Everyone gets 'Fail': the IF chain is written with the wrong direction, or v_marks is not fetched correctly.","Wrong grade for 60 marks: use >= 60 for First Class, not > 60.","Grade shows old value at the end: the done check was moved after the grade code."]},
+ {t:"Lab 4 — NOT FOUND handler (counting rows)",
+  goal:"Show how the NOT FOUND handler detects the end of data, by counting the rows processed.",
+  code:`DROP PROCEDURE IF EXISTS lab4_not_found_demo;
+DELIMITER //
+CREATE PROCEDURE lab4_not_found_demo()
+BEGIN
+    DECLARE v_name  VARCHAR(50);
+    DECLARE v_marks INT;
+    DECLARE v_done  BOOLEAN DEFAULT FALSE;
+    DECLARE v_count INT DEFAULT 0;
+    DECLARE cur CURSOR FOR
+        SELECT name, marks FROM students ORDER BY student_id;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = TRUE;
+
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO v_name, v_marks;
+        IF v_done THEN
+            LEAVE read_loop;
+        END IF;
+        SET v_count = v_count + 1;
+    END LOOP read_loop;
+    CLOSE cur;
+
+    SELECT CONCAT('Rows processed: ', v_count) AS summary;
+END //
+DELIMITER ;
+
+CALL lab4_not_found_demo();`,
+  input:"Students table (see Lab 1).",
+  output:"summary\nRows processed: 6",
+  flow:["v_count starts at 0.","Each successful FETCH adds 1 to v_count.","The 7th FETCH finds no row. The handler sets v_done = TRUE.","IF v_done → LEAVE. The 7th pass does not add 1.","Final count is 6."],
+  errors:["Count is 7: the increment runs before the done check. Put the check first.","Count is 0: v_count was not initialised, or the loop left too early.","Procedure stops with error 1329: the handler is missing or declared after the cursor in the wrong place."]},
+ {t:"Lab 5 — Cursor with a WHILE loop",
+  goal:"Use WHILE with the done flag. WHILE checks its condition before each run.",
+  code:`DROP PROCEDURE IF EXISTS lab5_while_cursor;
+DELIMITER //
+CREATE PROCEDURE lab5_while_cursor()
+BEGIN
+    DECLARE v_name  VARCHAR(50);
+    DECLARE v_marks INT;
+    DECLARE v_done  BOOLEAN DEFAULT FALSE;
+    DECLARE cur CURSOR FOR
+        SELECT name, marks FROM students ORDER BY student_id;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = TRUE;
+
+    OPEN cur;
+    read_loop: WHILE NOT v_done DO
+        FETCH cur INTO v_name, v_marks;
+        IF NOT v_done THEN
+            SELECT v_name AS student_name, v_marks AS marks;
+        END IF;
+    END WHILE read_loop;
+    CLOSE cur;
+END //
+DELIMITER ;
+
+CALL lab5_while_cursor();`,
+  input:"Students table (see Lab 1).",
+  output:"Same six rows as Lab 2: Asha 82, Ravi 74, Meena 55, Kiran 35, Priya 91, Arjun 60.",
+  flow:["v_done starts FALSE, so WHILE NOT v_done runs.","FETCH copies the next row.","The NOT v_done check protects the display from the end-of-data fetch.","When FETCH finds no row, the handler sets v_done = TRUE.","WHILE checks again, sees the loop should stop, and exits."],
+  errors:["Loop does not run: v_done is NULL, so NOT v_done is NULL. Initialise it with DEFAULT FALSE.","Last row shown twice: the display is not protected by IF NOT v_done.","Why LOOP is often more natural: the exit point is explicit, which fits when the number of rows is unknown."]}
+];
+
+/* ---------- Rules ---------- */
+const RULES = [
+ {t:"Variables first", d:"Declare every variable before any cursor or handler. A variable declared after a cursor causes error 1337."},
+ {t:"Cursors before handlers", d:"Declare cursors before handlers. Handlers come last, so the order matches the MySQL rule."},
+ {t:"All declarations before statements", d:"Inside each BEGIN…END block, all DECLARE lines must come before the first executable statement such as SET, OPEN or SELECT."},
+ {t:"DELIMITER", d:"Use DELIMITER // before CREATE PROCEDURE, so the semicolons inside the body are not treated as the end of the statement. Switch back with DELIMITER ;."},
+ {t:"DECLARE CONTINUE HANDLER FOR NOT FOUND", d:"Runs when a FETCH finds no row. CONTINUE means the procedure keeps going after the handler's statement, so your code can check the flag."},
+ {t:"The done flag", d:"A variable such as v_done (BOOLEAN DEFAULT FALSE). The handler sets it TRUE. Your loop checks it to know when to stop."},
+ {t:"LOOP and LEAVE", d:"A labelled LOOP repeats until LEAVE label is run. Use it with the done flag to exit."},
+ {t:"Check the flag right after FETCH", d:"On the NOT FOUND fetch, the variables keep their old values. If you process them first, the last row is processed twice. So check v_done immediately after FETCH, before using the variables."},
+ {t:"Closing and nesting", d:"Always CLOSE the cursor when done. Nested BEGIN…END blocks are allowed, and each block follows the same declaration order."}
+];
+
+/* ---------- Quiz (20 MCQs) ---------- */
+const QUIZ_RAW = [
+ ["What is a cursor in MySQL?",["A type of index that speeds up searches","A way to process a query's result one row at a time inside a stored program","A trigger that fires for each row","A table that stores temporary results"],1,"A cursor lets a stored program walk through a result set one row at a time."],
+ ["Which is the correct order of cursor steps?",["OPEN, DECLARE, FETCH, CLOSE","DECLARE, OPEN, FETCH, CLOSE","DECLARE, FETCH, OPEN, CLOSE","FETCH, OPEN, DECLARE, CLOSE"],1,"You declare the cursor, open it, fetch rows, then close it."],
+ ["Which statement correctly declares a cursor?",["CREATE CURSOR cur AS SELECT name FROM students;","DECLARE cur CURSOR FOR SELECT name FROM students;","DECLARE cur = SELECT name FROM students;","OPEN cur FOR SELECT name FROM students;"],1,"DECLARE name CURSOR FOR select_statement; is the MySQL syntax."],
+ ["A cursor is open and FETCH runs one time too many, with no NOT FOUND handler. What happens?",["The variables get NULL and the procedure continues","MySQL raises error 1329 (No data) and the procedure stops","The last row is fetched again","The loop runs forever"],1,"Without a handler, FETCH with no row raises error 1329 (SQLSTATE 02000), and the procedure stops."],
+ ["Which declaration order is valid inside BEGIN…END?",["Cursor, variable, handler","Variable, handler, cursor","Handler, variable, cursor","Variable, cursor, handler"],3,"Variables, then cursors, then handlers. The other orders cause errors."],
+ ["What does DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = TRUE; do?",["Stops the procedure at the first FETCH","Sets v_done to TRUE when a FETCH finds no row, and the procedure continues","Opens the cursor automatically","Deletes all rows from the cursor"],1,"The handler runs on NOT FOUND, sets the flag, and CONTINUE lets the code carry on."],
+ ["Why must IF v_done THEN LEAVE … END IF; come immediately after FETCH?",["To close the cursor","Because on the NOT FOUND fetch the variables keep old values, so processing them would repeat the last row","Because CLOSE must come before FETCH","Because LOOP requires it"],1,"The end-of-data fetch does not overwrite the variables, so the flag must be checked before using them."],
+ ["Which is NOT true about MySQL 8.0 stored-program cursors?",["They are asensitive","They are read-only","They are non-scrollable","You can explicitly declare them INSENSITIVE or SCROLL in a normal stored procedure"],3,"MySQL does not let you choose INSENSITIVE or SCROLL in a normal stored procedure cursor."],
+ ["In MySQL, what does 'read-only' mean for a stored-program cursor?",["The cursor cannot be closed","The cursor cannot be used to update the row it points to","The cursor cannot use a WHERE clause","The cursor can only read from a view"],1,"Read-only means rows are read through the cursor. Changes are made with a separate UPDATE or DELETE."],
+ ["What does 'non-scrollable' mean?",["The cursor can move only forward; it cannot go back to a previous row","The cursor cannot read more than one row","The cursor must be closed inside a function","The cursor can only be used with SELECT *"],0,"Non-scrollable means forward-only, one row at a time."],
+ ["What does 'asensitive' mean?",["The cursor is guaranteed to show a frozen copy of the table","The cursor may or may not show changes made to the table after it was opened","The cursor locks the table until it is closed","The cursor cannot read rows changed by UPDATE"],1,"Asensitive makes no promise about seeing later changes. The server decides."],
+ ["Which best describes an insensitive cursor (a concept, not a MySQL option)?",["It always shows the latest data","It works on a snapshot taken when the cursor was opened","It can update rows","It moves backward and forward"],1,"Insensitive uses a snapshot. MySQL stored procedures do not let you declare it."],
+ ["A registrar wants to raise marks for each student using a cursor. Since MySQL cursors are read-only, which approach is correct?",["Use WHERE CURRENT OF on the cursor","Read the student ids with the cursor, then run a separate UPDATE for each id","Use a SCROLL cursor to go back and update","Declare the cursor as INSENSITIVE UPDATE"],1,"A read-only cursor cannot update the current row. Use a separate UPDATE statement by student id."],
+ ["Which handler syntax is correct?",["DECLARE HANDLER NOT FOUND CONTINUE;","DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = TRUE;","HANDLER CONTINUE FOR NOT FOUND v_done = TRUE;","ON NOT FOUND CONTINUE SET v_done = TRUE;"],1,"DECLARE CONTINUE HANDLER FOR NOT FOUND statement; is the correct form."],
+ ["Students are ordered by student_id: 1 Asha, 2 Ravi, 3 Meena. After two FETCH statements, what does v_name hold?",["Asha","Ravi","Meena","NULL"],1,"The first FETCH gives Asha, the second gives Ravi. The variable holds the most recent row."],
+ ["The code has DECLARE cur CURSOR FOR …; then FETCH cur INTO v; What step is missing?",["CLOSE cur","OPEN cur","DECLARE CONTINUE HANDLER","LEAVE label"],1,"A cursor must be opened before it is fetched from."],
+ ["A loop uses WHILE NOT v_done DO, but v_done was never initialised (NULL). What happens?",["The loop runs once","The WHILE condition is NULL, so the body never runs","MySQL raises a syntax error","The loop runs forever"],1,"NOT NULL is NULL, which is not TRUE, so the body does not run. Initialise v_done with DEFAULT FALSE."],
+ ["A handler sets done = 1 when no row is found. After the loop ends, SELECT done; is run. What is shown?",["0","1","NULL","6"],1,"The handler sets done to 1 at the end of data. The loop then ends, and SELECT shows 1."],
+ ["Why are cursors often slower than set-based SQL?",["They cannot use indexes","They process one row at a time in procedural code instead of one statement over all rows","They always lock the whole database","They cannot read tables"],1,"Row-by-row procedural code is usually slower than one set-based statement."],
+ ["A procedure gives 'Variable or condition declaration after cursor or handler declaration'. What is the cause?",["A FETCH before OPEN","A variable declared after the cursor declaration","A missing CLOSE","A LEAVE with no label"],1,"Variables must come before cursors and handlers. Move the DECLARE of the variable higher."]
+];
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------- 2. Lifecycle stepper ---------- */
+let lcIdx=0;
+function renderLife(){
+  document.querySelectorAll("#lcSeg button").forEach((b,i)=>b.classList.toggle("on",i===lcIdx));
+  document.querySelectorAll("#lcFlow .fstep").forEach((el,i)=>el.classList.toggle("on",i===lcIdx));
+  const s=LIFE[lcIdx];
+  document.getElementById("lcBody").innerHTML=`
+    <h3 style="margin:14px 0 6px;font-size:18px">${esc(s.t)}</h3>
+    <p><b>Simple definition:</b> ${esc(s.def)}</p>
+    <p><b>Real-life analogy:</b> ${esc(s.ana)}</p>
+    <p><b>MySQL syntax:</b></p><pre><code>${esc(s.syn)}</code></pre>
+    <p style="margin-top:10px"><b>Example:</b></p><pre><code>${esc(s.code)}</code></pre>
+    <p style="margin-top:10px"><b>Line by line:</b></p>
+    <ul class="sum">${s.lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>
+    <div class="out" style="margin-top:10px"><b>What happens inside:</b> ${esc(s.internal)}</div>
+    <p style="margin-top:10px"><b>Common beginner mistakes:</b></p>
+    <ul class="sum">${s.mistakes.map(m=>`<li>${esc(m)}</li>`).join('')}</ul>`;
+}
+document.querySelectorAll("#lcSeg button").forEach(b=>b.onclick=()=>{lcIdx=+b.dataset.s;renderLife();});
+renderLife();
+
+/* ---------- FETCH simulator ---------- */
+let fIdx=-1, fDone=false;
+function renderFetch(){
+  const rows=document.getElementById("fRows");
+  rows.innerHTML=SAMPLE.map((r,i)=>{
+    const cls = i===fIdx ? 'cur' : (i<fIdx ? 'done' : '');
+    return `<tr><td class="${cls}">${r[0]}</td><td class="${cls}">${esc(r[1])}</td><td class="${cls}">${r[2]}</td></tr>`;
+  }).join('');
+  const cur = fIdx>=0 ? SAMPLE[fIdx] : null;
+  const last = fIdx>=0 ? SAMPLE[fIdx] : null;
+  document.getElementById("vName").textContent = last ? last[1] : "NULL";
+  document.getElementById("vMarks").textContent = last ? last[2] : "NULL";
+  document.getElementById("vDone").textContent = fDone ? "TRUE" : "FALSE";
+  document.getElementById("fCount").textContent = "Rows fetched: " + Math.max(0,fIdx+1);
+  const msg=document.getElementById("fMsg");
+  if(fIdx<0){ msg.className="msg"; msg.textContent="Cursor is open, positioned before the first row."; }
+  else if(fDone){ msg.className="msg warn"; msg.textContent="NOT FOUND: no row left. The handler sets v_done = TRUE. The variables keep the last row (Arjun, 60). Check v_done before using them."; }
+  else { msg.className="msg ok"; msg.textContent=`FETCH copied row ${fIdx+1} (${SAMPLE[fIdx][1]}) into v_name and v_marks.`; }
+}
+document.getElementById("fBtn").onclick=()=>{
+  if(fDone) return;
+  if(fIdx<SAMPLE.length-1) fIdx++; else fDone=true;
+  renderFetch();
+};
+document.getElementById("fReset").onclick=()=>{fIdx=-1;fDone=false;renderFetch();};
+renderFetch();
+
+/* ---------- 3. Property cards ---------- */
+let tyIdx=0;
+function renderTypes(){
+  document.querySelectorAll("#tySeg button").forEach((b,i)=>b.classList.toggle("on",i===tyIdx));
+  const t=TYPES[tyIdx];
+  const yes = t.status.startsWith("MySQL 8.0: YES");
+  document.getElementById("tyGrid").innerHTML=`
+   <article class="card full">
+    <div class="card-head"><h3>${esc(t.t)}</h3><span class="badge ${yes?'b-yes':'b-no'}">${yes?'Used in MySQL 8.0':'Concept only'}</span></div>
+    <p><b>Simple definition:</b> ${esc(t.def)}</p>
+    <p><b>MySQL 8.0 status:</b> ${esc(t.status)}</p>
+    <p><b>Real-life examples:</b></p>
+    <ul class="sum">${t.ex.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>
+    <p><b>College scenario:</b> ${esc(t.scen)}</p>
+    <p><b>Comparison:</b> ${esc(t.comp)}</p>
+    <div class="out"><b>Memory trick:</b> ${esc(t.mem)}</div>
+    <div class="mcq" style="border:none;padding-bottom:0">
+      <h4>CDAC-level MCQ</h4>
+      <p style="margin:0 0 6px">${esc(t.mcq.q)}</p>
+      <ol>${t.mcq.o.map((o,i)=>`<li>${String.fromCharCode(65+i)}) ${esc(o)}</li>`).join('')}</ol>
+      <button class="btn" data-reveal-type="${tyIdx}">Show answer</button>
+      <div class="ans" id="tyAns">Answer: ${String.fromCharCode(65+t.mcq.a)}) ${esc(t.mcq.o[t.mcq.a])}. ${esc(t.mcq.e)}</div>
+    </div>
+   </article>`;
+  document.querySelector("[data-reveal-type]").onclick=()=>document.getElementById("tyAns").classList.toggle("show");
+}
+document.querySelectorAll("#tySeg button").forEach(b=>b.onclick=()=>{tyIdx=+b.dataset.t;renderTypes();});
+renderTypes();
+
+/* ---------- 4. Real world ---------- */
+document.getElementById("rwGrid").innerHTML=RW.map(r=>`
+ <article class="card" data-search="${esc((r.t+' '+r.use).toLowerCase())}">
+  <div class="card-head"><h3>${esc(r.t)}</h3><span class="tag">example</span></div>
+  <p><b>Task:</b> ${esc(r.use)}</p>
+  <p><b>Cursor useful?</b> ${esc(r.cursor)}</p>
+  <div class="tip">💡 <b>Normal SQL better?</b> ${esc(r.normal)}</div>
+ </article>`).join('');
+
+/* ---------- Labs ---------- */
+document.getElementById("labGrid").innerHTML = LABS.map((L,li)=>{
+  const setupBlock = li===0 ? `
+    <div class="card full">
+      <div class="card-head"><h3>Setup (run once)</h3><span class="tag">required</span></div>
+      <p>Creates the <b>students</b> table used by all labs. Run this first.</p>
+      <pre><code id="setup-code">${esc(SETUP)}</code><button class="copy" data-copy="setup-code">Copy</button></pre>
+      <p><b>Sample data:</b></p>
+      <div class="tablewrap" style="box-shadow:none"><table>
+        <tr><th>student_id</th><th>name</th><th>marks</th></tr>
+        ${SAMPLE.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}
+      </table></div>
+    </div>` : '';
+  return `${setupBlock}
+  <article class="card full" data-search="${esc((L.t+' '+L.goal).toLowerCase())}">
+    <div class="card-head"><h3>${esc(L.t)}</h3><span class="tag">lab</span></div>
+    <p><b>Goal:</b> ${esc(L.goal)}</p>
+    <pre><code id="lab-${li}">${esc(L.code)}</code><button class="copy" data-copy="lab-${li}">Copy</button></pre>
+    <p><b>Input:</b> ${esc(L.input)}</p>
+    <div class="out"><b>Expected output:</b>\n${esc(L.output)}</div>
+    <p><b>Execution flow:</b></p>
+    <ol class="sum">${L.flow.map(f=>`<li>${esc(f)}</li>`).join('')}</ol>
+    <p><b>Common errors and fixes:</b></p>
+    <ul class="sum">${L.errors.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>
+    <p class="note-line"><b>Line-by-line:</b> DECLARE lines create variables and the cursor. OPEN starts the query. FETCH … INTO copies one row. The NOT FOUND handler sets v_done at the end. LEAVE or WHILE stops the loop. CLOSE releases the cursor. CALL runs the procedure.</p>
+  </article>`;
+}).join('');
+
+/* ---------- 3. Rules ---------- */
+document.getElementById("ruleGrid").innerHTML=RULES.map(r=>`
+ <div class="card" data-search="${esc((r.t+' '+r.d).toLowerCase())}">
+  <div class="card-head"><h3>${esc(r.t)}</h3><span class="tag">rule</span></div>
+  <p>${esc(r.d)}</p>
+ </div>`).join('');
+
+/* ---------- Quiz ---------- */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function prep(x){const order=shuffle(x[1].map((_,i)=>i));return {q:x[0],o:order.map(i=>x[1][i]),a:order.indexOf(x[2]),e:x[3]};}
+let QUIZ=[],qi=0,score=0;
+function startQuiz(){QUIZ=shuffle(QUIZ_RAW.map(prep));qi=0;score=0;renderQuiz();}
+function renderQuiz(){
+  const box=document.getElementById("quizbox");
+  if(qi>=QUIZ.length){
+    const pct=Math.round(score/QUIZ.length*100);
+    box.innerHTML=`<div class="score">Score: ${score} / ${QUIZ.length} (${pct}%)</div>
+      <p class="feedback">${pct>=80?"Excellent. You are ready for the cursor questions in the exam.":pct>=60?"Good work. Revise the questions you missed, then retry.":"Keep practising. Re-read the lifecycle and the NOT FOUND handler, then retry."}</p>
+      <div class="row" style="margin-top:12px"><button class="btn primary" id="restart">Restart quiz (reshuffled)</button></div>`;
+    document.getElementById("restart").onclick=startQuiz; return;
+  }
+  const Q=QUIZ[qi], pctDone=Math.round(qi/QUIZ.length*100);
+  box.innerHTML=`<div class="feedback">Question ${qi+1} of ${QUIZ.length} · Score ${score}</div>
+   <div class="bar" style="margin:8px 0 14px"><div style="width:${pctDone}%"></div></div>
+   <div class="q"><h4>${esc(Q.q)}</h4><div class="opts">
+     ${Q.o.map((x,i)=>`<button class="opt" data-i="${i}">${String.fromCharCode(65+i)}) ${esc(x)}</button>`).join("")}
+   </div><div class="feedback" id="fb"></div>
+   <div class="row" style="margin-top:12px"><button class="btn primary" id="next" disabled>${qi===QUIZ.length-1?"See score":"Next →"}</button></div></div>`;
+  const opts=[...box.querySelectorAll(".opt")];
+  opts.forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i; opts.forEach(x=>x.disabled=true); opts[Q.a].classList.add("right");
+    if(i===Q.a)score++; else b.classList.add("wrong");
+    document.getElementById("fb").textContent=(i===Q.a?"✅ Correct. ":"❌ Not quite. ")+Q.e;
+    document.getElementById("next").disabled=false;
+  });
+  document.getElementById("next").onclick=()=>{qi++;renderQuiz();};
+}
+startQuiz();
+
+/* ---------- search, theme, copy, progress, nav ---------- */
+document.getElementById("q").addEventListener("input",e=>{
+  const v=e.target.value.trim().toLowerCase();
+  document.querySelectorAll("[data-search]").forEach(el=>el.classList.toggle("hide", v!=="" && !el.dataset.search.includes(v)));
+});
+document.getElementById("theme").addEventListener("click",()=>{
+  const dark=document.documentElement.getAttribute("data-theme")==="dark";
+  if(dark){document.documentElement.removeAttribute("data-theme");document.getElementById("theme").textContent="🌙";}
+  else{document.documentElement.setAttribute("data-theme","dark");document.getElementById("theme").textContent="☀️";}
+});
+document.addEventListener("click",e=>{
+  const c=e.target.closest("[data-copy]");
+  if(c){const txt=document.getElementById(c.dataset.copy).textContent;navigator.clipboard?.writeText(txt).catch(()=>{});c.textContent="Copied ✓";setTimeout(()=>c.textContent="Copy",1200);}
+});
+const SECTIONS=["intro","lifecycle","types","realworld","labs","rules","confusions","exam"];
+const viewed=new Set();
+function updProg(){
+  document.getElementById("ptext").textContent=`${viewed.size} of ${SECTIONS.length} sections viewed`;
+  document.getElementById("pbar").style.width=(viewed.size/SECTIONS.length*100)+"%";
+}
+updProg();
+const links=[...document.querySelectorAll("nav.side a")];
+const io=new IntersectionObserver(es=>{es.forEach(en=>{
+  if(en.isIntersecting){viewed.add(en.target.id);updProg();
+    links.forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+en.target.id));}
+});},{rootMargin:"-40% 0px -55% 0px"});
+SECTIONS.forEach(id=>io.observe(document.getElementById(id)));
+
+</script>
+</body>
+</html>
