@@ -28,6 +28,12 @@
           "title": "MySQL Triggers",
           "description": "BEFORE/AFTER, OLD and NEW, SIGNAL",
           "file": "cdac_session14_triggers.html"
+        },
+        {
+          "number": 15,
+          "title": "Error Handling and Exceptions",
+          "description": "Handlers, CONTINUE vs EXIT, SQLSTATE, SIGNAL and RESIGNAL",
+          "file": "cdac_session15.html"
         }
       ]
     }

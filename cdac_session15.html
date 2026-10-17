@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CDAC DBT Session 15 — Error Handling and Exceptions</title>
+<style>
+
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#f0f3f9; --text:#1b2333; --muted:#5d6779;
+  --accent:#4f46e5; --accent2:#0ea5a4; --ok:#16a34a; --bad:#dc2626; --warn:#f59e0b;
+  --code-bg:#0f172a; --code-text:#e2e8f0; --border:#e3e7ef; --shadow:0 6px 24px rgba(15,23,42,.07);
+  --radius:16px;
+}
+[data-theme="dark"]{
+  --bg:#0b1020; --surface:#131a2e; --surface2:#1a2340; --text:#e6ebf5; --muted:#9aa6bf;
+  --accent:#818cf8; --accent2:#2dd4bf; --border:#26304d; --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:1200px;margin:auto;display:flex;align-items:center;gap:14px;padding:12px 18px}
+.brand{font-weight:800;letter-spacing:-.2px;display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px}
+.search{flex:1;max-width:420px;position:relative;margin-left:auto}
+.search input{width:100%;padding:10px 14px 10px 38px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit;outline:none}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.search::before{content:"⌕";position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:18px}
+.iconbtn{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:12px;padding:9px 12px;cursor:pointer;font:inherit}
+.iconbtn:hover{border-color:var(--accent)}
+.wrap{max-width:1200px;margin:auto;display:grid;grid-template-columns:240px 1fr;gap:28px;padding:24px 18px 80px}
+nav.side{position:sticky;top:84px;align-self:start}
+nav.side a{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;color:var(--muted);text-decoration:none;font-weight:600;font-size:14.5px;margin-bottom:4px}
+nav.side a:hover,nav.side a.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+nav.side .count{font-size:12px;background:var(--surface2);padding:2px 8px;border-radius:999px}
+.progress-card{margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.bar{height:8px;background:var(--surface2);border-radius:999px;overflow:hidden;margin-top:8px}
+.bar>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+main{min-width:0}
+.hero{background:linear-gradient(135deg,#4f46e5,#0ea5a4);color:#fff;border-radius:22px;padding:34px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 8px;font-size:clamp(24px,4vw,36px);letter-spacing:-.6px}
+.hero p{margin:0;opacity:.92;max-width:680px}
+.hero .chips{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+.hero .chip{background:rgba(255,255,255,.18);padding:6px 12px;border-radius:999px;font-size:13px}
+section.part{margin-top:44px;scroll-margin-top:84px}
+section.part>h2{font-size:24px;letter-spacing:-.4px;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h3{margin:0;font-size:18px;font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--accent)}
+.tag{font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:3px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);font-weight:700}
+.card p{margin:0;font-size:14.5px;color:var(--muted)}
+.card p b{color:var(--text)}
+.full{grid-column:1/-1}
+pre{margin:0;background:var(--code-bg);color:var(--code-text);padding:12px 14px;border-radius:12px;overflow-x:auto;font:13px/1.6 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;position:relative;white-space:pre}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.out{background:color-mix(in srgb,var(--ok) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--ok) 40%,transparent);border-radius:12px;padding:10px 12px;font:13.5px "JetBrains Mono",ui-monospace,monospace;color:var(--text);white-space:pre-wrap}
+.tip{font-size:13.5px;background:color-mix(in srgb,var(--warn) 14%,var(--surface));border-left:3px solid var(--warn);padding:8px 12px;border-radius:10px;color:var(--text)}
+.learned{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.learned input{accent-color:var(--ok);width:16px;height:16px}
+.hide{display:none!important}
+.copy{position:absolute;top:8px;right:8px;font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;cursor:pointer}
+.copy:hover{color:#fff}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+.slider-row{display:flex;align-items:center;gap:14px;margin:10px 0}
+input[type=range]{flex:1;accent-color:var(--accent)}
+select{padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit}
+.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.rung{padding:12px 8px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);text-align:center;font-size:13.5px;transition:all .25s}
+.rung small{display:block;color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:12px}
+.rung.hit{background:color-mix(in srgb,var(--ok) 18%,var(--surface));border-color:var(--ok);font-weight:700}
+.rung.skip{opacity:.5}
+.result{font-size:24px;font-weight:800;margin-top:6px}
+.trace{background:var(--code-bg);color:var(--code-text);border-radius:12px;padding:12px 14px;font:13px/1.7 "JetBrains Mono",ui-monospace,monospace;min-height:150px;max-height:260px;overflow:auto;white-space:pre-wrap}
+.trace .now{color:#fde047}
+.vars{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.var{padding:8px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);font-family:"JetBrains Mono",monospace;font-size:14px}
+.var b{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:var(--surface2);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.q{padding:4px 0}
+.q h4{margin:0 0 10px;font-size:16px;line-height:1.5}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font:inherit}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:color-mix(in srgb,var(--ok) 18%,var(--surface));border-color:var(--ok)}
+.opt.wrong{background:color-mix(in srgb,var(--bad) 16%,var(--surface));border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.feedback{font-size:14px;margin-top:8px;color:var(--muted);min-height:20px}
+.score{font-size:28px;font-weight:800;margin-top:12px}
+footer{margin-top:60px;color:var(--muted);font-size:13px;text-align:center}
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  nav.side{position:static;display:flex;overflow-x:auto;gap:6px;padding-bottom:6px}
+  nav.side a{white-space:nowrap;margin:0}
+  .progress-card,.search{display:none}
+  .ladder{grid-template-columns:repeat(2,1fr)}
+}
+
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.seg button{border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer;font:inherit;font-size:13.5px;font-weight:600}
+.seg button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sim-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:10px}
+.sim-row label{font-size:13px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+select{width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit}
+.msg{font-family:"JetBrains Mono",monospace;font-size:14px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--surface2)}
+.msg.warn{color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+.msg.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface))}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;margin-left:6px}
+.b-mysql{background:color-mix(in srgb,var(--accent) 18%,var(--surface));color:var(--accent)}
+.b-gen{background:color-mix(in srgb,var(--accent2) 18%,var(--surface));color:var(--accent2)}
+ul.sum,ol.sum{margin:6px 0 0 18px;padding:0;font-size:14.5px}
+ul.sum li,ol.sum li{margin-bottom:5px}
+.mcq{padding:10px 0;border-bottom:1px solid var(--border)}
+details.qa{border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:8px;background:var(--surface2)}
+details.qa summary{cursor:pointer;font-weight:700;font-size:15px}
+details.qa p{margin:8px 0 0;color:var(--text);font-size:14.5px}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><div class="logo">EH</div><span>CDAC DBT · Session 15</span></div>
+    <div class="search"><input id="q" type="search" placeholder="Search HANDLER, SIGNAL, SQLSTATE…" aria-label="Search"></div>
+    <button class="iconbtn" id="theme" title="Toggle dark mode">🌙</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="side">
+    <a href="#basics">1. Errors and exceptions</a>
+    <a href="#handlers">2. Handlers and types</a>
+    <a href="#conditions">3. Conditions and codes</a>
+    <a href="#writing">4. Writing handlers</a>
+    <a href="#simulator">Handler simulator</a>
+    <a href="#examples">5. Practical examples</a>
+    <a href="#signal">6. SIGNAL and RESIGNAL</a>
+    <a href="#compare">Comparison tables</a>
+    <a href="#exam">CDAC exam prep</a>
+    <a href="#interview">Interview Q&amp;A</a>
+    <a href="#revision">Final revision sheet</a>
+    <div class="progress-card">
+      <div style="font-weight:700;font-size:14px">Your progress</div>
+      <div style="font-size:13px;color:var(--muted)" id="ptext"></div>
+      <div class="bar"><div id="pbar"></div></div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <h1>Error Handling and Exceptions</h1>
+      <p>When something goes wrong inside a stored procedure, a handler decides what happens next. Learn what errors are, how handlers catch them, and how to raise your own errors with SIGNAL.</p>
+      <div class="chips" style="margin-top:18px"><span class="chip">Handler simulator</span><span class="chip">5 practical examples</span><span class="chip">20 MCQs</span><span class="chip">14 interview answers</span></div>
+    </div>
+
+    <!-- 1 -->
+    <section class="part" id="basics">
+      <h2>1. Errors, warnings, exceptions and conditions</h2>
+      <p class="lead">Real-life first: a college office receives a form with a student number that is already registered. The clerk does not ignore it. The clerk stops, says "already exists", and continues with the next form. That reaction is what error handling does in code.</p>
+      <div class="grid">
+        <div class="card"><div class="card-head"><h3>Error</h3><span class="tag">something failed</span></div>
+          <p>A statement could not be completed. Example: inserting a student id that already exists. MySQL stops that statement and raises an error.</p></div>
+        <div class="card"><div class="card-head"><h3>Warning</h3><span class="tag">completed with a note</span></div>
+          <p>The statement finished, but MySQL has a note about it. Example: a value was cut to fit a column. The work is done, and a warning is recorded.</p></div>
+        <div class="card"><div class="card-head"><h3>NOT FOUND</h3><span class="tag">no row</span></div>
+          <p>A SELECT ... INTO or a cursor FETCH found no row. This is not a failure of the statement. It means there was no data to read.</p></div>
+        <div class="card"><div class="card-head"><h3>Exception and SQL condition</h3><span class="tag">the umbrella words</span></div>
+          <p>A <b>condition</b> is any named situation that MySQL can report: an error, a warning, or NOT FOUND. An <b>exception</b> is a condition that interrupts normal flow, usually an error. A handler is written to react to conditions.</p></div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="part" id="handlers">
+      <h2>2. What is a handler, and why do we need it?</h2>
+      <div class="grid">
+        <div class="card full"><div class="card-head"><h3>Handler</h3><span class="tag">definition</span></div>
+          <p>A <b>handler</b> is a declaration inside a BEGIN…END block that says: <i>when this condition happens, run this statement.</i> Without a handler, an error in a stored procedure stops the procedure and the error goes back to the caller.</p>
+          <div class="out"><b>Analogy:</b> a fire alarm. The alarm (condition) is set up in advance (DECLARE HANDLER), and it tells the building what to do when smoke appears.</div></div>
+        <div class="card"><div class="card-head"><h3>CONTINUE handler</h3><span class="tag">keep going</span></div>
+          <p>After the handler's statement runs, execution continues with the statement that comes <b>after</b> the one that raised the condition.</p></div>
+        <div class="card"><div class="card-head"><h3>EXIT handler</h3><span class="tag">leave block</span></div>
+          <p>After the handler's statement runs, execution leaves the BEGIN…END block where the handler was declared. In a procedure's top block, the procedure ends.</p></div>
+        <div class="card full"><div class="card-head"><h3>UNDO handler</h3><span class="tag">not in MySQL</span></div>
+          <p>The SQL standard describes an UNDO handler, which would undo the work of the block. <b>MySQL 8.0 does not support UNDO handlers.</b> Writing DECLARE UNDO HANDLER gives a syntax error. Use EXIT with ROLLBACK for a similar result.</p>
+          <div class="msg warn">MySQL 8.0 supports: CONTINUE and EXIT only. UNDO is not supported.</div></div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="part" id="conditions">
+      <h2>3. Condition categories, error codes and SQLSTATE</h2>
+      <p class="lead">A handler can name a condition by category, by error code, by SQLSTATE, or by a name you create.</p>
+      <div class="grid">
+        <div class="card"><div class="card-head"><h3>SQLEXCEPTION</h3><span class="tag">any real error</span></div>
+          <p>Covers every SQLSTATE class that is not 00 (success), 01 (warning) or 02 (NOT FOUND). Use it as a general safety net.</p></div>
+        <div class="card"><div class="card-head"><h3>SQLWARNING</h3><span class="tag">SQLSTATE 01…</span></div>
+          <p>Covers warnings: SQLSTATE values that start with 01, such as a value truncated during an insert.</p></div>
+        <div class="card"><div class="card-head"><h3>NOT FOUND</h3><span class="tag">SQLSTATE 02…</span></div>
+          <p>Covers SQLSTATE values that start with 02, such as SELECT ... INTO with no matching row, or FETCH after the last cursor row.</p></div>
+        <div class="card"><div class="card-head"><h3>Error code</h3><span class="tag">MySQL number</span></div>
+          <p>A MySQL-specific number. Example: <b>1062</b> means duplicate entry. You see it as "ERROR 1062 (23000)" in the client.</p></div>
+        <div class="card"><div class="card-head"><h3>SQLSTATE</h3><span class="tag">5-character standard code</span></div>
+          <p>A standard code used across databases. Example: <b>'23000'</b> is an integrity-constraint violation (this group includes duplicate keys). <b>'45000'</b> is the generic code for user-defined errors raised with SIGNAL.</p></div>
+        <div class="card"><div class="card-head"><h3>Named condition</h3><span class="tag">your own name</span></div>
+          <p>You can give a code a name with DECLARE … CONDITION FOR, then use that name in a handler. This makes the code easier to read.</p></div>
+      </div>
+      <div class="tablewrap" style="margin-top:14px">
+        <table>
+          <tr><th>Common error</th><th>Error code</th><th>SQLSTATE</th><th>Meaning</th></tr>
+          <tr><td>Duplicate entry</td><td>1062</td><td>23000</td><td>Primary key or unique value already exists</td></tr>
+          <tr><td>Table does not exist</td><td>1146</td><td>42S02</td><td>Table name is wrong or missing</td></tr>
+          <tr><td>No data for SELECT … INTO / FETCH</td><td>1329</td><td>02000</td><td>NOT FOUND condition</td></tr>
+          <tr><td>User-defined error (SIGNAL)</td><td>1644</td><td>45000</td><td>Raised by your own SIGNAL statement</td></tr>
+        </table>
+      </div>
+      <p class="lead" style="margin-top:10px"><span class="badge b-mysql">MySQL 8.0 fact</span> The error code (for example 1062) and the SQLSTATE (for example 23000) both identify the same error. A handler can use either one. The numbers above are standard MySQL values.</p>
+    </section>
+
+    <!-- 4 -->
+    <section class="part" id="writing">
+      <h2>4. Writing handlers and declaration order</h2>
+      <div class="grid">
+        <div class="card full"><div class="card-head"><h3>Handler syntax</h3><span class="tag">MySQL 8.0</span></div>
+<pre><code>DECLARE handler_action HANDLER FOR condition_value [, condition_value] ...
+    statement;
+
+-- handler_action : CONTINUE | EXIT
+-- condition_value: SQLEXCEPTION | SQLWARNING | NOT FOUND
+--                | SQLSTATE 'sqlstate_value' | error_code | condition_name</code></pre>
+          <p><b>Line by line:</b> <code>DECLARE</code> starts the declaration. <code>CONTINUE</code> or <code>EXIT</code> is the action. <code>HANDLER FOR</code> introduces the condition(s). <code>statement</code> is what runs, and it may be a BEGIN…END block.</p></div>
+
+        <div class="card full"><div class="card-head"><h3>Named condition syntax</h3><span class="tag">DECLARE … CONDITION</span></div>
+<pre><code>DECLARE condition_name CONDITION FOR condition_value;
+
+-- Example
+DECLARE dup_key CONDITION FOR 1062;
+DECLARE CONTINUE HANDLER FOR dup_key SELECT 'Duplicate!' AS message;</code></pre>
+          <p>DECLARE CONDITION only <b>gives a name</b> to a code. It does nothing by itself. A DECLARE HANDLER is what reacts to the condition.</p></div>
+
+        <div class="card full"><div class="card-head"><h3>Declaration order inside BEGIN…END</h3><span class="tag">must know</span></div>
+          <div class="flow">
+            <div class="fstep on">1. Variables and named conditions<br><small>DECLARE v_x INT; DECLARE dup_key CONDITION …</small></div>
+            <div class="fstep on">2. Cursors<br><small>DECLARE cur CURSOR FOR …</small></div>
+            <div class="fstep on">3. Handlers<br><small>DECLARE … HANDLER …</small></div>
+            <div class="fstep on">4. Statements<br><small>SET, SELECT, IF, OPEN, CALL …</small></div>
+          </div>
+          <div class="msg warn">Declaring a variable, condition, cursor or handler after an executable statement is a syntax error. Keep all DECLARE lines together at the top of the block.</div></div>
+
+        <div class="card full"><div class="card-head"><h3>Scope and behaviour</h3><span class="tag">where it works</span></div>
+          <ul class="sum">
+            <li>A handler applies to statements in the BEGIN…END block where it is declared, and in blocks nested inside it.</li>
+            <li>Handlers work in stored procedures and in stored functions.</li>
+            <li>A handler on NOT FOUND catches missing rows from SELECT … INTO and from cursor FETCH.</li>
+            <li>If several handlers match one error, the most specific one is used: error code first, then SQLSTATE, then the general category.</li>
+          </ul></div>
+      </div>
+    </section>
+
+    <!-- simulator -->
+    <section class="part" id="simulator">
+      <h2>Handler simulator</h2>
+      <p class="lead">Choose a situation and a handler, then see what the procedure does. Try the same error with CONTINUE and with EXIT.</p>
+      <div class="panel">
+        <div class="sim-row">
+          <div><label for="simErr">What goes wrong</label>
+            <select id="simErr">
+              <option value="1062">Duplicate student id (error 1062, SQLSTATE 23000)</option>
+              <option value="1146">Table does not exist (error 1146, SQLSTATE 42S02)</option>
+              <option value="NF">SELECT INTO finds no row (NOT FOUND)</option>
+              <option value="1644">SIGNAL SQLSTATE '45000' (user error 1644)</option>
+              <option value="W">Value truncated (warning 1265, SQLSTATE 01000)</option>
+            </select></div>
+          <div><label for="simCond">Handler is declared for</label>
+            <select id="simCond">
+              <option value="1062">Error 1062</option>
+              <option value="SQLSTATE23000">SQLSTATE '23000'</option>
+              <option value="SQLEXCEPTION" selected>SQLEXCEPTION</option>
+              <option value="NOT FOUND">NOT FOUND</option>
+              <option value="SQLWARNING">SQLWARNING</option>
+            </select></div>
+          <div><label for="simAct">Handler action</label>
+            <select id="simAct"><option value="CONTINUE">CONTINUE</option><option value="EXIT">EXIT</option></select></div>
+        </div>
+        <div class="flow" id="simFlow">
+          <div class="fstep">1. Statement 1 runs</div>
+          <div class="fstep">2. Error or condition raised</div>
+          <div class="fstep">3. Handler chosen</div>
+          <div class="fstep">4. Next step</div>
+        </div>
+        <div class="msg" id="simOut"></div>
+      </div>
+    </section>
+
+    <!-- 5 examples -->
+    <section class="part" id="examples">
+      <h2>5. Practical examples</h2>
+      <p class="lead">Each example states the problem, gives the complete MySQL 8.0 code, shows the expected behaviour, and explains what changes with EXIT. Run the setup first.</p>
+      <div class="grid" id="exGrid"></div>
+    </section>
+
+    <!-- 6 -->
+    <section class="part" id="signal">
+      <h2>6. SIGNAL and RESIGNAL</h2>
+      <div class="grid">
+        <div class="card"><div class="card-head"><h3>SIGNAL</h3><span class="tag">raise an error</span></div>
+          <p>Starts a new error or warning yourself. Use SIGNAL SQLSTATE '45000' for a custom error, and set the text with SET MESSAGE_TEXT.</p>
+<pre><code>SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Marks must be 0 to 100';</code></pre></div>
+        <div class="card"><div class="card-head"><h3>RESIGNAL</h3><span class="tag">pass it on</span></div>
+          <p>Used only inside a handler. It raises the error again, so the caller (or an outer handler) receives it. You can change the message.</p>
+<pre><code>DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
+BEGIN
+    RESIGNAL SET MESSAGE_TEXT = 'Could not save record';
+END;</code></pre></div>
+      </div>
+      <div class="msg warn" style="margin-top:12px">Exam trap: RESIGNAL outside a handler is an error. A RESIGNAL inside a CONTINUE handler re-raises the error, so unless an outer handler catches it, the procedure stops and the caller gets the error.</div>
+    </section>
+
+    <!-- comparisons -->
+    <section class="part" id="compare">
+      <h2>Comparison tables</h2>
+      <h3 style="margin:8px 0 6px;font-size:17px">Errors vs warnings vs NOT FOUND</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Feature</th><th>Error</th><th>Warning</th><th>NOT FOUND</th></tr>
+          <tr><td>Statement completed?</td><td>No</td><td>Yes, with a note</td><td>Yes, but no row was read</td></tr>
+          <tr><td>SQLSTATE class</td><td>Not 00, 01 or 02 (e.g. 23000)</td><td>01</td><td>02</td></tr>
+          <tr><td>Handler category</td><td>SQLEXCEPTION</td><td>SQLWARNING</td><td>NOT FOUND</td></tr>
+          <tr><td>Typical cause</td><td>Duplicate key, bad table name</td><td>Value cut to fit</td><td>SELECT INTO with no row</td></tr>
+        </table>
+      </div>
+      <h3 style="margin:18px 0 6px;font-size:17px">CONTINUE vs EXIT handlers</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Feature</th><th>CONTINUE</th><th>EXIT</th></tr>
+          <tr><td>After the handler</td><td>Runs the next statement after the failing one</td><td>Leaves the BEGIN…END block</td></tr>
+          <tr><td>Procedure ends?</td><td>No (unless later code stops it)</td><td>Yes, if the handler is in the top block</td></tr>
+          <tr><td>Typical use</td><td>Record a fallback value, then continue</td><td>Roll back and stop cleanly</td></tr>
+          <tr><td>UNDO</td><td colspan="2">UNDO is not supported in MySQL 8.0</td></tr>
+        </table>
+      </div>
+      <h3 style="margin:18px 0 6px;font-size:17px">SQLEXCEPTION vs SQLWARNING vs NOT FOUND</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Category</th><th>Covers</th><th>Example</th></tr>
+          <tr><td>SQLEXCEPTION</td><td>Any error (not 00, 01 or 02)</td><td>Duplicate key 1062</td></tr>
+          <tr><td>SQLWARNING</td><td>SQLSTATE 01…</td><td>Data truncated 1265</td></tr>
+          <tr><td>NOT FOUND</td><td>SQLSTATE 02…</td><td>No row for SELECT INTO</td></tr>
+        </table>
+      </div>
+      <h3 style="margin:18px 0 6px;font-size:17px">Error code vs SQLSTATE</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Feature</th><th>Error code</th><th>SQLSTATE</th></tr>
+          <tr><td>Type</td><td>Number (MySQL-specific)</td><td>5 characters (standard)</td></tr>
+          <tr><td>Example</td><td>1062</td><td>'23000'</td></tr>
+          <tr><td>Specificity</td><td>One exact error</td><td>May cover several errors in one class</td></tr>
+        </table>
+      </div>
+      <h3 style="margin:18px 0 6px;font-size:17px">DECLARE CONDITION vs DECLARE HANDLER</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Feature</th><th>DECLARE … CONDITION</th><th>DECLARE … HANDLER</th></tr>
+          <tr><td>Purpose</td><td>Gives a name to a code</td><td>Says what to do when a condition occurs</td></tr>
+          <tr><td>Does it act?</td><td>No</td><td>Yes</td></tr>
+        </table>
+      </div>
+      <h3 style="margin:18px 0 6px;font-size:17px">SIGNAL vs RESIGNAL</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Feature</th><th>SIGNAL</th><th>RESIGNAL</th></tr>
+          <tr><td>Starts a new error?</td><td>Yes</td><td>Re-raises the current one</td></tr>
+          <tr><td>Where allowed</td><td>Anywhere in a stored program</td><td>Only inside a handler</td></tr>
+          <tr><td>Message change</td><td>Yes</td><td>Yes (optional)</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- exam -->
+    <section class="part" id="exam">
+      <h2>CDAC exam preparation</h2>
+      <div class="grid">
+        <div class="card full"><div class="card-head"><h3>Common traps in MCQs</h3><span class="tag">read carefully</span></div>
+          <ul class="sum">
+            <li><b>UNDO handler</b> looks correct but is not supported in MySQL 8.0.</li>
+            <li><b>CONTINUE</b> does not stop the procedure; <b>EXIT</b> leaves the block.</li>
+            <li><b>DECLARE CONDITION</b> does not handle anything. Only DECLARE HANDLER reacts.</li>
+            <li><b>Handler after a statement</b> is a syntax error.</li>
+            <li><b>SQLSTATE '23000'</b> covers more errors than error 1062.</li>
+            <li><b>RESIGNAL</b> only works inside a handler.</li>
+          </ul></div>
+        <div class="card"><div class="card-head"><h3>Important facts to memorise</h3><span class="tag">facts</span></div>
+          <ul class="sum">
+            <li>MySQL 8.0 handler actions: CONTINUE, EXIT.</li>
+            <li>NOT FOUND = SQLSTATE 02…; warnings = 01…</li>
+            <li>1062 = duplicate entry (23000); 1644 = SIGNAL (45000).</li>
+          </ul></div>
+        <div class="card"><div class="card-head"><h3>Beginner mistakes and fixes</h3><span class="tag">fix</span></div>
+          <ul class="sum">
+            <li>Mistake: forgetting ROLLBACK in a transaction handler. Fix: add it before the message.</li>
+            <li>Mistake: expecting CONTINUE to stop. Fix: use EXIT to leave the block.</li>
+            <li>Mistake: no NOT FOUND handler after SELECT INTO. Fix: add one.</li>
+          </ul></div>
+        <div class="card full"><div class="card-head"><h3>Official MySQL behaviour vs general SQL idea</h3><span class="tag">distinguish</span></div>
+          <div class="tablewrap" style="box-shadow:none"><table>
+            <tr><th>Topic</th><th>General SQL idea</th><th>MySQL 8.0 behaviour</th></tr>
+            <tr><td>UNDO handler</td><td>Described in the standard</td><td>Not supported</td></tr>
+            <tr><td>Named conditions</td><td>Common idea</td><td>DECLARE … CONDITION FOR is supported</td></tr>
+            <tr><td>RESIGNAL</td><td>Re-raise idea</td><td>Supported inside handlers</td></tr>
+          </table></div></div>
+      </div>
+
+      <h3 style="margin:24px 0 8px;font-size:18px">20 CDAC-level MCQs</h3>
+      <p class="lead">Choose an option to see the answer and explanation. Options are shuffled each time.</p>
+      <div class="panel" id="quizbox"></div>
+    </section>
+
+    <!-- interview -->
+    <section class="part" id="interview">
+      <h2>Interview questions (easy answers)</h2>
+      <p class="lead">Tap a question to see the answer.</p>
+      <div class="panel" id="ivBox"></div>
+    </section>
+
+    <!-- revision -->
+    <section class="part" id="revision">
+      <h2>Final revision sheet</h2>
+      <div class="panel">
+        <ul class="sum">
+          <li><b>Handler syntax:</b> DECLARE CONTINUE|EXIT HANDLER FOR condition statement;</li>
+          <li><b>Actions:</b> CONTINUE runs the next statement; EXIT leaves the block. UNDO is not supported.</li>
+          <li><b>Categories:</b> SQLEXCEPTION (errors), SQLWARNING (01…), NOT FOUND (02…).</li>
+          <li><b>Codes:</b> error code 1062 = duplicate entry, SQLSTATE 23000. 1644 = SIGNAL, SQLSTATE 45000.</li>
+          <li><b>Named condition:</b> DECLARE name CONDITION FOR 1062; then use name in a handler.</li>
+          <li><b>Order:</b> variables and conditions, then cursors, then handlers, then statements.</li>
+          <li><b>SIGNAL</b> raises an error. <b>RESIGNAL</b> re-raises inside a handler only.</li>
+          <li><b>MCQ traps:</b> UNDO, DECLARE CONDITION does not act, handler after statements, RESIGNAL outside handler.</li>
+          <li><b>MySQL 8.0 limits:</b> no UNDO handlers; handlers must be declared before statements.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>CDAC DBT — Session 15 · MySQL 8.0 syntax · Based on the DBT Session 15 notes</footer>
+  </main>
+</div>
+<script>
+const SETUP15 = `CREATE DATABASE IF NOT EXISTS college;
+USE college;
+
+DROP TABLE IF EXISTS students;
+CREATE TABLE students (
+    student_id INT PRIMARY KEY,
+    name       VARCHAR(50) NOT NULL,
+    marks      INT NOT NULL
+);
+INSERT INTO students VALUES (1,'Asha',82),(2,'Ravi',74),(3,'Meena',55);
+
+DROP TABLE IF EXISTS accounts;
+CREATE TABLE accounts (
+    acc_id  INT PRIMARY KEY,
+    holder  VARCHAR(30) NOT NULL,
+    balance DECIMAL(10,2) NOT NULL
+);
+INSERT INTO accounts VALUES (1,'Asha',5000.00),(2,'Ravi',1000.00);`;
+
+const EXAMPLES = [
+ {t:"Example 1 — Duplicate student id with CONTINUE",
+  problem:"Adding a student whose id already exists should print a friendly message and keep the procedure running.",
+  purpose:"Catch error 1062 (duplicate entry) only, using a CONTINUE handler.",
+  code:`DROP PROCEDURE IF EXISTS add_student_continue;
+DELIMITER //
+CREATE PROCEDURE add_student_continue(IN p_id INT, IN p_name VARCHAR(50), IN p_marks INT)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1062
+        SELECT CONCAT('Student id ', p_id, ' already exists') AS message;
+
+    INSERT INTO students (student_id, name, marks) VALUES (p_id, p_name, p_marks);
+    SELECT 'Insert step finished' AS status;
+END //
+DELIMITER ;
+
+CALL add_student_continue(1, 'Dup', 50);`,
+  expect:"message: Student id 1 already exists\nstatus: Insert step finished",
+  lines:["DECLARE CONTINUE HANDLER FOR 1062 — if error 1062 happens, run the SELECT, then continue.","SELECT CONCAT(...) — the handler's message. It is shown to the caller.","INSERT … — fails with 1062 because id 1 already exists.","SELECT 'Insert step finished' — still runs, because CONTINUE carries on after the failed statement."],
+  flow:["CALL starts the procedure. The handler is registered.","INSERT id 1 fails with error 1062.","Handler runs: first result set shows 'already exists'.","CONTINUE: execution moves on to the next statement.","Second result set shows 'Insert step finished'."],
+  exit:"Replace CONTINUE with EXIT. The handler message still appears, but the procedure LEAVES after the handler. 'Insert step finished' is NOT shown.",
+  limit:"Only error 1062 is caught. Other errors (for example a missing table) still stop the procedure."},
+ {t:"Example 2 — Same problem with EXIT",
+  problem:"The same duplicate insert, but this time the procedure should stop after the message.",
+  purpose:"Show how EXIT changes what happens after the handler.",
+  code:`DROP PROCEDURE IF EXISTS add_student_exit;
+DELIMITER //
+CREATE PROCEDURE add_student_exit(IN p_id INT, IN p_name VARCHAR(50), IN p_marks INT)
+BEGIN
+    DECLARE EXIT HANDLER FOR 1062
+        SELECT CONCAT('Student id ', p_id, ' already exists') AS message;
+
+    INSERT INTO students (student_id, name, marks) VALUES (p_id, p_name, p_marks);
+    SELECT 'Insert step finished' AS status;
+END //
+DELIMITER ;
+
+CALL add_student_exit(1, 'Dup', 50);   -- duplicate: handler runs, procedure ends
+CALL add_student_exit(4, 'Kiran', 35); -- new id: normal path`,
+  expect:"Call 1 -> message: Student id 1 already exists (no status line)\nCall 2 -> status: Insert step finished",
+  lines:["DECLARE EXIT HANDLER — on 1062, run the message, then leave the block.","Call 1 uses id 1, which exists, so the handler runs and the procedure ends.","Call 2 uses id 4, which is new, so no error happens and the normal path runs."],
+  flow:["Call 1: INSERT fails with 1062.","EXIT handler shows the message and leaves the block.","The status SELECT is skipped.","Call 2: INSERT succeeds. No handler runs. The status line appears."],
+  exit:"This example already uses EXIT. Changing it back to CONTINUE would show the status line after the message in call 1.",
+  limit:"EXIT does not undo earlier changes in the block. Use ROLLBACK inside the handler when work must be undone (see Example 5)."},
+ {t:"Example 3 — Named condition (DECLARE … CONDITION)",
+  problem:"Make the duplicate-error handler easier to read by giving error 1062 a name.",
+  purpose:"Show DECLARE … CONDITION, followed by a handler that uses the name.",
+  code:`DROP PROCEDURE IF EXISTS add_student_named;
+DELIMITER //
+CREATE PROCEDURE add_student_named(IN p_id INT, IN p_name VARCHAR(50), IN p_marks INT)
+BEGIN
+    DECLARE dup_key CONDITION FOR 1062;
+    DECLARE EXIT HANDLER FOR dup_key
+    BEGIN
+        SELECT CONCAT('Duplicate id ', p_id, ' - not added') AS message;
+    END;
+
+    INSERT INTO students (student_id, name, marks) VALUES (p_id, p_name, p_marks);
+    SELECT CONCAT('Added ', p_name) AS message;
+END //
+DELIMITER ;
+
+CALL add_student_named(2, 'Ravi2', 60);
+CALL add_student_named(4, 'Kiran', 35);`,
+  expect:"Call 1 -> message: Duplicate id 2 - not added\nCall 2 -> message: Added Kiran",
+  lines:["DECLARE dup_key CONDITION FOR 1062 — gives the name dup_key to error 1062. It does nothing by itself.","DECLARE EXIT HANDLER FOR dup_key — the handler now refers to the name.","BEGIN … END; — the handler body is a block with one SELECT."],
+  flow:["Call 1: id 2 exists, so error 1062 is raised.","dup_key matches 1062; the handler runs.","Call 2: id 4 is new; the message 'Added Kiran' appears."],
+  exit:"With CONTINUE instead of EXIT, call 1 would print the duplicate message and then also run the next SELECT, which wrongly says 'Added Ravi2'. EXIT stops that.",
+  limit:"A named condition is only a name. It is useless unless a handler uses it."},
+ {t:"Example 4 — NOT FOUND in a stored function",
+  problem:"Look up a student's marks. If the id does not exist, return 0 instead of an error.",
+  purpose:"Use a NOT FOUND handler with SELECT … INTO inside a stored function.",
+  code:`DROP FUNCTION IF EXISTS marks_or_zero;
+DELIMITER //
+CREATE FUNCTION marks_or_zero(p_id INT) RETURNS INT
+READS SQL DATA
+BEGIN
+    DECLARE v_marks INT;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_marks = 0;
+
+    SELECT marks INTO v_marks FROM students WHERE student_id = p_id;
+    RETURN v_marks;
+END //
+DELIMITER ;
+
+SELECT marks_or_zero(1) AS asha, marks_or_zero(99) AS missing;`,
+  expect:"asha = 82, missing = 0",
+  lines:["READS SQL DATA — tells MySQL the function reads tables but does not change them.","DECLARE v_marks … — the variable must come before the handler.","CONTINUE HANDLER FOR NOT FOUND SET v_marks = 0 — if no row is found, set 0 and carry on.","RETURN v_marks — returns the value."],
+  flow:["Call with id 1: SELECT INTO finds 82. No handler runs. Returns 82.","Call with id 99: no row, so NOT FOUND is raised.","Handler sets v_marks = 0 and execution continues.","RETURN returns 0."],
+  exit:"With EXIT, the function would leave the block at once and return the value of v_marks at that moment. Here that is NULL, not 0, so CONTINUE is the right choice.",
+  limit:"Without the handler, SELECT INTO with no row raises error 1329 and the function fails."},
+ {t:"Example 5 — Money transfer with ROLLBACK (EXIT)",
+  problem:"Move money from one account to another. If anything fails, undo everything.",
+  purpose:"Combine EXIT, ROLLBACK, NOT FOUND, and SIGNAL in a real transaction.",
+  code:`DROP PROCEDURE IF EXISTS transfer_money;
+DELIMITER //
+CREATE PROCEDURE transfer_money(IN p_from INT, IN p_to INT, IN p_amt DECIMAL(10,2))
+BEGIN
+    DECLARE v_bal DECIMAL(10,2);
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND
+    BEGIN
+        ROLLBACK;
+        SELECT 'Transfer failed. All changes were undone.' AS message;
+    END;
+
+    START TRANSACTION;
+    SELECT balance INTO v_bal FROM accounts WHERE acc_id = p_from;
+
+    IF v_bal < p_amt THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Insufficient balance';
+    END IF;
+    IF (SELECT COUNT(*) FROM accounts WHERE acc_id = p_to) = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Receiver account not found';
+    END IF;
+
+    UPDATE accounts SET balance = balance - p_amt WHERE acc_id = p_from;
+    UPDATE accounts SET balance = balance + p_amt WHERE acc_id = p_to;
+    COMMIT;
+    SELECT 'Transfer successful' AS message;
+END //
+DELIMITER ;
+
+CALL transfer_money(1, 2, 1500.00);  -- works
+CALL transfer_money(2, 1, 9999.00);  -- not enough money
+CALL transfer_money(1, 99, 100.00);  -- receiver missing
+SELECT acc_id, holder, balance FROM accounts;`,
+  expect:"Call 1 -> Transfer successful\nCall 2 -> Transfer failed. All changes were undone.\nCall 3 -> Transfer failed. All changes were undone.\nFinal balances: Asha 3500.00, Ravi 2500.00",
+  lines:["DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND — one handler for two kinds of problem.","START TRANSACTION — begin the group of changes.","SIGNAL … — raises a custom error, which the EXIT handler catches.","ROLLBACK — undoes the changes made in this transaction.","COMMIT — makes the changes permanent when everything worked."],
+  flow:["Call 1: checks pass, both updates run, COMMIT, success message.","Call 2: Ravi has 1000, so SIGNAL raises 'Insufficient balance'.","The EXIT handler runs ROLLBACK, shows the failure, and leaves.","Call 3: the receiver check fails in the same way. Nothing changes."],
+  exit:"Important: with CONTINUE instead of EXIT, the handler would run ROLLBACK and then carry on to COMMIT and print 'Transfer successful'. That is dangerous. EXIT stops the work safely.",
+  limit:"Without ROLLBACK, the first UPDATE would stay saved even though the transfer failed. The handler must undo the work."}
+];
+
+const QUIZ15_RAW = [
+ ["What is a handler in MySQL?",["A table that stores error messages","A declaration that tells a stored program what to do when a specific condition occurs","A type of index","A user account privilege"],1,"A handler reacts to a condition, such as an error or NOT FOUND."],
+ ["Which handler actions does MySQL 8.0 support?",["CONTINUE and EXIT","CONTINUE, EXIT and UNDO","EXIT and UNDO","CONTINUE and UNDO"],0,"MySQL 8.0 supports CONTINUE and EXIT. UNDO is not supported."],
+ ["Which condition category covers SQLSTATE values that start with '02'?",["SQLEXCEPTION","SQLWARNING","NOT FOUND","SQLSTATE '45000'"],2,"Class 02 is the NOT FOUND category."],
+ ["Which SQLSTATE class is treated as SQLWARNING?",["00","01","02","45"],1,"SQLSTATE values starting with 01 are warnings."],
+ ["Which statement correctly declares a handler?",["DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET x = 1;","CREATE HANDLER SQLEXCEPTION CONTINUE;","DECLARE HANDLER CONTINUE SQLEXCEPTION x = 1;","HANDLER CONTINUE FOR SQLEXCEPTION;"],0,"DECLARE action HANDLER FOR condition statement; is the correct form."],
+ ["Which error code means 'duplicate entry'?",["1062","1146","1329","1644"],0,"Error 1062 is a duplicate key or unique value violation (SQLSTATE 23000)."],
+ ["Which SQLSTATE is used by SIGNAL for user-defined errors?",["'45000'","'02000'","'01000'","'42S02'"],0,"SIGNAL SQLSTATE '45000' is the usual user-defined error code."],
+ ["What is the difference between an error code and SQLSTATE?",["They are the same thing","An error code is MySQL's specific number; SQLSTATE is a 5-character standard code","SQLSTATE is only for warnings","An error code is a string like '45000'"],1,"Error code 1062 is MySQL-specific. SQLSTATE 23000 is the standard class."],
+ ["What does a CONTINUE handler do after its statement runs?",["Leaves the BEGIN…END block","Continues with the statement after the one that raised the condition","Restarts the procedure","Rolls back the whole transaction automatically"],1,"CONTINUE keeps going after the failing statement."],
+ ["What does an EXIT handler do after its statement runs?",["Continues with the next statement","Leaves the BEGIN…END block where it was declared","Calls itself again","Ignores the error"],1,"EXIT leaves the block. In a top-level procedure block, the procedure ends."],
+ ["Which handler action is NOT supported in MySQL 8.0?",["DECLARE EXIT HANDLER","DECLARE CONTINUE HANDLER","DECLARE UNDO HANDLER","DECLARE CONDITION"],2,"UNDO handlers are not supported in MySQL."],
+ ["Which order is correct inside BEGIN…END?",["Handlers, variables, cursors","Variables and conditions, then cursors, then handlers","Cursors, variables, handlers","Handlers, cursors, variables"],1,"Variables and conditions come first, then cursors, then handlers."],
+ ["What does DECLARE dup_key CONDITION FOR 1062; do?",["Creates a table","Gives the name dup_key to error 1062 so handlers can use it","Stops error 1062 from happening","Declares a variable"],1,"DECLARE CONDITION only names the code. A handler is still needed to react."],
+ ["SELECT marks INTO v FROM students WHERE student_id = 99; finds no row. Which condition is raised?",["SQLEXCEPTION","SQLWARNING","NOT FOUND","No condition"],2,"SELECT INTO with no row raises NOT FOUND (SQLSTATE 02000)."],
+ ["Which statement re-raises the current error inside a handler?",["SIGNAL","RESIGNAL","DECLARE","REPEAT"],1,"RESIGNAL re-raises the current condition, and it is only allowed inside a handler."],
+ ["A procedure has DECLARE CONTINUE HANDLER FOR 1062 SELECT 'dup'; then an INSERT of a duplicate, then SELECT 'done'. What is shown?",["Only 'dup'","Only 'done'","'dup' then 'done'","Error 1062 and nothing else"],2,"CONTINUE shows 'dup' and then the next statement runs, showing 'done'."],
+ ["The same procedure, but with EXIT instead of CONTINUE. What is shown?",["'dup' then 'done'","Only 'dup'","Only 'done'","Nothing"],1,"EXIT shows 'dup' and leaves the block, so 'done' is skipped."],
+ ["SIGNAL SQLSTATE '45000' is raised and the caller has no handler. What does the client see?",["Nothing","Error 1644 with the message text","Error 1329","Warning 1265"],1,"The user-defined error is reported with error 1644 and your MESSAGE_TEXT."],
+ ["Which statement about SQLSTATE '23000' and error 1062 is true?",["SQLSTATE 23000 is more specific than error 1062","SQLSTATE 23000 covers several integrity errors, so a handler on it catches more than a handler on 1062","They always catch exactly the same errors","Error 1062 covers every SQLSTATE class"],1,"SQLSTATE 23000 is a class of integrity-constraint errors. Error 1062 is one of them."],
+ ["A handler is declared after a SET statement in the same BEGIN…END block. What happens?",["It works normally","A syntax error, because declarations must come before statements","It only works in functions","It runs before the SET"],1,"All DECLARE lines must come before executable statements."]
+];
+
+const INTERVIEW15 = [
+ ["What is error handling in MySQL?","It is the way a stored procedure or function reacts when something goes wrong, using handlers, instead of stopping at the first error."],
+ ["What is a handler?","A DECLARE statement inside BEGIN…END that says what to do when a specific condition happens, such as an error or NOT FOUND."],
+ ["Which handler types does MySQL 8.0 support?","CONTINUE and EXIT. UNDO handlers are not supported in MySQL."],
+ ["What is the difference between CONTINUE and EXIT?","CONTINUE runs the handler and then goes on with the next statement. EXIT runs the handler and then leaves the BEGIN…END block."],
+ ["What are SQLEXCEPTION, SQLWARNING and NOT FOUND?","They are condition categories. SQLEXCEPTION is any real error, SQLWARNING is a warning (SQLSTATE 01…), and NOT FOUND is no row (SQLSTATE 02…)."],
+ ["What is SQLSTATE?","A 5-character standard code that describes the type of error. For example, '23000' is an integrity-constraint violation."],
+ ["What is the difference between an error code and SQLSTATE?","The error code (such as 1062) is a MySQL-specific number for one exact error. SQLSTATE (such as 23000) is a standard code that can cover several errors."],
+ ["What does DECLARE … CONDITION do?","It gives a name to an error code or SQLSTATE. It does not handle anything by itself; a handler is still needed."],
+ ["What is SIGNAL used for?","To raise your own error or warning inside a stored program, for example SIGNAL SQLSTATE '45000' with a message."],
+ ["What is the difference between SIGNAL and RESIGNAL?","SIGNAL starts a new error. RESIGNAL passes on the current error again, and it can only be used inside a handler."],
+ ["Why is NOT FOUND important?","Because a SELECT INTO or a cursor FETCH with no row would otherwise raise an error. The NOT FOUND handler lets the code deal with an empty result."],
+ ["What is the correct declaration order inside BEGIN…END?","Variables and named conditions first, then cursors, then handlers, and only after that the executable statements."],
+ ["Can handlers be used in stored functions?","Yes. A handler can be declared in a stored function, for example to return 0 when a row is missing."],
+ ["What is the difference between an error and a warning?","An error stops the statement from completing. A warning lets the statement finish, but MySQL records a note about it."]
+];
+
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------- Handler simulator (follows MySQL matching rules) ---------- */
+const ERRS={
+ "1062":{code:1062,sqlstate:"23000",cls:"EXC",name:"duplicate entry (1062)"},
+ "1146":{code:1146,sqlstate:"42S02",cls:"EXC",name:"table does not exist (1146)"},
+ "NF":{code:1329,sqlstate:"02000",cls:"NF",name:"no row found (NOT FOUND)"},
+ "1644":{code:1644,sqlstate:"45000",cls:"EXC",name:"user SIGNAL error (1644)"},
+ "W":{code:1265,sqlstate:"01000",cls:"WARN",name:"value truncated (warning 1265)"}
+};
+function matches(cond,e){
+  if(cond==="SQLSTATE23000") return e.sqlstate==="23000";
+  if(cond==="SQLEXCEPTION") return e.cls==="EXC";
+  if(cond==="NOT FOUND") return e.cls==="NF";
+  if(cond==="SQLWARNING") return e.cls==="WARN";
+  return String(e.code)===cond;   // specific error code
+}
+function runSim(){
+  const e=ERRS[document.getElementById("simErr").value];
+  const cond=document.getElementById("simCond").value;
+  const act=document.getElementById("simAct").value;
+  const steps=[...document.querySelectorAll("#simFlow .fstep")];
+  steps.forEach(s=>s.classList.remove("on","err"));
+  steps[0].classList.add("on");
+  steps[1].classList.add(e.cls==="WARN"?"on":"err");
+  const out=document.getElementById("simOut");
+  const hit=matches(cond,e);
+  if(!hit){
+    if(e.cls==="WARN"){
+      steps[3].classList.add("on"); steps[3].textContent="4. Statement finishes";
+      out.className="msg ok";
+      out.textContent=`No handler matches ${e.name}. A warning does not stop the procedure: it is recorded and the next statement runs.`;
+    } else {
+      steps[3].classList.add("err"); steps[3].textContent="4. Procedure stops";
+      out.className="msg warn";
+      out.textContent=`No handler matches ${e.name}. The error goes back to the caller and the procedure stops.`;
+    }
+    return;
+  }
+  steps[2].classList.add("on"); steps[2].textContent="3. Handler runs ("+act+")";
+  steps[3].classList.add("on");
+  if(act==="CONTINUE"){
+    steps[3].textContent="4. Next statement runs";
+    out.className="msg ok";
+    out.textContent=`Handler matches ${e.name}. CONTINUE: the handler runs, then the procedure goes on with the statement after the one that failed.`;
+  } else {
+    steps[3].textContent="4. Block is left";
+    out.className="msg warn";
+    out.textContent=`Handler matches ${e.name}. EXIT: the handler runs, then the BEGIN…END block is left. Statements after the failing one do NOT run.`;
+  }
+}
+["simErr","simCond","simAct"].forEach(id=>document.getElementById(id).addEventListener("change",runSim));
+runSim();
+
+/* ---------- Examples ---------- */
+document.getElementById("exGrid").innerHTML = EXAMPLES.map((x,i)=>`
+ <article class="card full" data-search="${esc((x.t+' '+x.problem).toLowerCase())}">
+  <div class="card-head"><h3>${esc(x.t)}</h3><span class="tag">example</span></div>
+  <p><b>Problem:</b> ${esc(x.problem)}</p>
+  <p><b>Purpose:</b> ${esc(x.purpose)}</p>
+  ${i===0?`<p><b>Setup (run once):</b></p>
+  <pre><code id="setup15">${esc(SETUP15)}</code><button class="copy" data-copy="setup15">Copy</button></pre>`:''}
+  <pre><code id="ex15-${i}">${esc(x.code)}</code><button class="copy" data-copy="ex15-${i}">Copy</button></pre>
+  <div class="out"><b>Expected output:</b>\n${esc(x.expect)}</div>
+  <p><b>Line by line:</b></p>
+  <ul class="sum">${x.lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>
+  <p><b>Execution flow:</b></p>
+  <ol class="sum">${x.flow.map(f=>`<li>${esc(f)}</li>`).join('')}</ol>
+  <div class="tip">💡 <b>If CONTINUE becomes EXIT:</b> ${esc(x.exit)}</div>
+  <p class="note-line"><b>Limitation:</b> ${esc(x.limit)}</p>
+ </article>`).join('');
+
+/* ---------- Quiz ---------- */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function prep(x){const order=shuffle(x[1].map((_,i)=>i));return {q:x[0],o:order.map(i=>x[1][i]),a:order.indexOf(x[2]),e:x[3]};}
+let QUIZ=[],qi=0,score=0;
+function startQuiz(){QUIZ=shuffle(QUIZ15_RAW.map(prep));qi=0;score=0;renderQuiz();}
+function renderQuiz(){
+  const box=document.getElementById("quizbox");
+  if(qi>=QUIZ.length){
+    const pct=Math.round(score/QUIZ.length*100);
+    box.innerHTML=`<div class="score">Score: ${score} / ${QUIZ.length} (${pct}%)</div>
+      <p class="feedback">${pct>=80?"Excellent. You are ready for handler questions in the exam.":pct>=60?"Good work. Revise the questions you missed, then retry.":"Keep practising. Use the handler simulator, then retry."}</p>
+      <div class="row" style="margin-top:12px"><button class="btn primary" id="restart">Restart quiz (reshuffled)</button></div>`;
+    document.getElementById("restart").onclick=startQuiz; return;
+  }
+  const Q=QUIZ[qi], pctDone=Math.round(qi/QUIZ.length*100);
+  box.innerHTML=`<div class="feedback">Question ${qi+1} of ${QUIZ.length} · Score ${score}</div>
+   <div class="bar" style="margin:8px 0 14px"><div style="width:${pctDone}%"></div></div>
+   <div class="q"><h4>${esc(Q.q)}</h4><div class="opts">
+     ${Q.o.map((x,i)=>`<button class="opt" data-i="${i}">${String.fromCharCode(65+i)}) ${esc(x)}</button>`).join("")}
+   </div><div class="feedback" id="fb"></div>
+   <div class="row" style="margin-top:12px"><button class="btn primary" id="next" disabled>${qi===QUIZ.length-1?"See score":"Next →"}</button></div></div>`;
+  const opts=[...box.querySelectorAll(".opt")];
+  opts.forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i; opts.forEach(x=>x.disabled=true); opts[Q.a].classList.add("right");
+    if(i===Q.a)score++; else b.classList.add("wrong");
+    document.getElementById("fb").textContent=(i===Q.a?"✅ Correct. ":"❌ Not quite. ")+Q.e;
+    document.getElementById("next").disabled=false;
+  });
+  document.getElementById("next").onclick=()=>{qi++;renderQuiz();};
+}
+startQuiz();
+
+/* ---------- Interview ---------- */
+document.getElementById("ivBox").innerHTML = INTERVIEW15.map((x,i)=>`
+  <details class="qa"><summary>${i+1}. ${esc(x[0])}</summary><p>${esc(x[1])}</p></details>`).join('');
+
+/* ---------- Search, theme, copy, progress, nav ---------- */
+document.getElementById("q").addEventListener("input",e=>{
+  const v=e.target.value.trim().toLowerCase();
+  document.querySelectorAll("[data-search]").forEach(el=>el.classList.toggle("hide", v!=="" && !el.dataset.search.includes(v)));
+});
+document.getElementById("theme").addEventListener("click",()=>{
+  const dark=document.documentElement.getAttribute("data-theme")==="dark";
+  if(dark){document.documentElement.removeAttribute("data-theme");document.getElementById("theme").textContent="🌙";}
+  else{document.documentElement.setAttribute("data-theme","dark");document.getElementById("theme").textContent="☀️";}
+});
+document.addEventListener("click",e=>{
+  const c=e.target.closest("[data-copy]");
+  if(c){const txt=document.getElementById(c.dataset.copy).textContent;navigator.clipboard?.writeText(txt).catch(()=>{});c.textContent="Copied ✓";setTimeout(()=>c.textContent="Copy",1200);}
+});
+const SECTIONS=["basics","handlers","conditions","writing","simulator","examples","signal","compare","exam","interview","revision"];
+const viewed=new Set();
+function updProg(){
+  document.getElementById("ptext").textContent=`${viewed.size} of ${SECTIONS.length} sections viewed`;
+  document.getElementById("pbar").style.width=(viewed.size/SECTIONS.length*100)+"%";
+}
+updProg();
+const links=[...document.querySelectorAll("nav.side a")];
+const io=new IntersectionObserver(es=>{es.forEach(en=>{
+  if(en.isIntersecting){viewed.add(en.target.id);updProg();
+    links.forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+en.target.id));}
+});},{rootMargin:"-40% 0px -55% 0px"});
+SECTIONS.forEach(id=>io.observe(document.getElementById(id)));
+
+</script>
+</body>
+</html>
