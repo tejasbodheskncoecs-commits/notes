@@ -40,12 +40,12 @@
     {
       "id": "wt",
       "name": "WT",
-      "description": "Web Technology: web apps, client-server, HTTP",
+      "description": "Web Technology: web apps, client-server, frontend, backend, HTTP",
       "sessions": [
         {
           "number": 1,
           "title": "Introduction to Web Technology, Web Applications and Client-Server Architecture",
-          "description": "Web apps, client, server, database, request-response cycle, HTTP methods and status codes",
+          "description": "Web applications, client/server/database, request-response cycle, HTML/CSS/JavaScript, React, Angular, Tailwind, Node.js, databases, URL/DNS, HTTP methods, status codes",
           "file": "wt_session1_interactive.html"
         }
       ]
