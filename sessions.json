@@ -36,6 +36,19 @@
           "file": "cdac_session15.html"
         }
       ]
+    },
+    {
+      "id": "wt",
+      "name": "WT",
+      "description": "Web Technology: web apps, client-server, HTTP",
+      "sessions": [
+        {
+          "number": 1,
+          "title": "Introduction to Web Technology, Web Applications and Client-Server Architecture",
+          "description": "Web apps, client, server, database, request-response cycle, HTTP methods and status codes",
+          "file": "wt_session1_interactive.html"
+        }
+      ]
     }
   ]
 }

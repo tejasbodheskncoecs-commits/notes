@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CDAC WT Session 1 — Introduction to Web Technology</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#f0f3f9; --text:#1b2333; --muted:#5d6779;
+  --accent:#4f46e5; --accent2:#0ea5a4; --ok:#16a34a; --bad:#dc2626; --warn:#f59e0b;
+  --code-bg:#0f172a; --code-text:#e2e8f0; --border:#e3e7ef; --shadow:0 6px 24px rgba(15,23,42,.07);
+  --radius:16px;
+}
+[data-theme="dark"]{
+  --bg:#0b1020; --surface:#131a2e; --surface2:#1a2340; --text:#e6ebf5; --muted:#9aa6bf;
+  --accent:#818cf8; --accent2:#2dd4bf; --border:#26304d; --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:1200px;margin:auto;display:flex;align-items:center;gap:14px;padding:12px 18px}
+.brand{font-weight:800;display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px}
+.search{flex:1;max-width:420px;position:relative;margin-left:auto}
+.search input{width:100%;padding:10px 14px 10px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit;outline:none}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.iconbtn{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:12px;padding:9px 12px;cursor:pointer;font:inherit}
+.wrap{max-width:1200px;margin:auto;display:grid;grid-template-columns:240px 1fr;gap:28px;padding:24px 18px 80px}
+nav.side{position:sticky;top:84px;align-self:start}
+nav.side a{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;color:var(--muted);text-decoration:none;font-weight:600;font-size:14.5px;margin-bottom:4px}
+nav.side a:hover,nav.side a.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+nav.side .count{font-size:12px;background:var(--surface2);padding:2px 8px;border-radius:999px}
+.progress-card{margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.bar{height:8px;background:var(--surface2);border-radius:999px;overflow:hidden;margin-top:8px}
+.bar>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+main{min-width:0}
+.hero{background:linear-gradient(135deg,#4f46e5,#0ea5a4);color:#fff;border-radius:22px;padding:34px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 8px;font-size:clamp(24px,4vw,34px);letter-spacing:-.6px}
+.hero p{margin:0;opacity:.92;max-width:680px}
+.chips{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:rgba(255,255,255,.18);padding:6px 12px;border-radius:999px;font-size:13px}
+section.part{margin-top:44px;scroll-margin-top:84px}
+section.part>h2{font-size:24px;letter-spacing:-.4px;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h3{margin:0;font-size:18px;color:var(--accent)}
+.tag{font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:3px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);font-weight:700}
+.card p{margin:0;font-size:14.5px;color:var(--muted)}
+.card p b{color:var(--text)}
+pre{margin:0;background:var(--code-bg);color:var(--code-text);padding:12px 14px;border-radius:12px;overflow-x:auto;font:13px/1.6 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;white-space:pre}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+select{padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit}
+.steps{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:14px 0}
+.step{padding:10px 4px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);text-align:center;font-size:12.5px;transition:all .25s}
+.step small{display:block;color:var(--muted);font-size:11px}
+.step.on{background:color-mix(in srgb,var(--accent) 20%,var(--surface));border-color:var(--accent);font-weight:700}
+.stepbox{font-size:15px;margin-top:6px;min-height:72px}
+.trace{background:var(--code-bg);color:var(--code-text);border-radius:12px;padding:12px 14px;font:13px/1.7 "JetBrains Mono",ui-monospace,monospace;white-space:pre-wrap;min-height:120px}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:var(--surface2);font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.q{padding:4px 0}
+.q h4{margin:0 0 10px;font-size:16px;line-height:1.5}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font:inherit}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:color-mix(in srgb,var(--ok) 18%,var(--surface));border-color:var(--ok)}
+.opt.wrong{background:color-mix(in srgb,var(--bad) 16%,var(--surface));border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.feedback{font-size:14px;margin-top:8px;color:var(--muted);min-height:20px}
+.score{font-size:28px;font-weight:800;margin-top:12px}
+.tip{font-size:13.5px;background:color-mix(in srgb,var(--warn) 14%,var(--surface));border-left:3px solid var(--warn);padding:8px 12px;border-radius:10px}
+.codes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.codebtn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font:600 14px "JetBrains Mono",monospace}
+.codebtn.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.learned{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.learned input{accent-color:var(--ok);width:16px;height:16px}
+.hide{display:none!important}
+.copy{position:absolute;top:8px;right:8px;font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;cursor:pointer}
+footer{margin-top:60px;color:var(--muted);font-size:13px;text-align:center}
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  nav.side{position:static;display:flex;overflow-x:auto;gap:6px;padding-bottom:6px}
+  nav.side a{white-space:nowrap;margin:0}
+  .progress-card,.search{display:none}
+  .steps{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><div class="logo">WT</div><span>CDAC WT · Session 1</span></div>
+    <div class="search"><input id="q" type="search" placeholder="Search browser, HTTP, URL, 404…" aria-label="Search"></div>
+    <button class="iconbtn" id="theme" title="Toggle dark mode">🌙</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="side">
+    <a href="#apps">Web applications</a>
+    <a href="#client-server">Client, server, database</a>
+    <a href="#cycle">Request-response cycle <span class="count">7 steps</span></a>
+    <a href="#frontend">Frontend <span class="count">HTML · CSS · JS</span></a>
+    <a href="#backend">Backend and databases</a>
+    <a href="#urls">URL, IP and DNS</a>
+    <a href="#methods">HTTP methods <span class="count">6</span></a>
+    <a href="#status">Status codes <span class="count">12</span></a>
+    <a href="#examples">Practical examples</a>
+    <a href="#quiz">Quiz <span class="count">16</span></a>
+    <a href="#revision">Revision</a>
+    <div class="progress-card">
+      <div style="font-weight:700;font-size:14px">Your progress</div>
+      <div style="font-size:13px;color:var(--muted)" id="ptext">0 of 6 sections marked learned</div>
+      <div class="bar"><div id="pbar"></div></div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <h1>Introduction to Web Technology</h1>
+      <p>How a web application works: what a browser, a server and a database do, how an HTTP request and response travel between them, and what the methods and status codes mean. Use the stepper, the method picker and the status-code explorer.</p>
+      <div class="chips"><span class="chip">Session 1 · 21 Oct 2026</span><span class="chip">Stepper</span><span class="chip">Method picker</span><span class="chip">16-question quiz</span></div>
+    </div>
+
+    <section class="part" id="apps">
+      <h2>Web applications</h2>
+      <p class="lead">An application is a program that does a useful job for a user. A web application is used through a browser, while the app itself runs on a server.</p>
+      <div class="grid" id="grid-apps"></div>
+      <div class="panel" style="margin-top:14px">
+        <div class="tablewrap"><table>
+          <tr><th>Point</th><th>Desktop application</th><th>Web application</th></tr>
+          <tr><td>Where it is installed</td><td>On your computer</td><td>On a server; you use it in a browser</td></tr>
+          <tr><td>Updates</td><td>You install the update (usually)</td><td>The developer updates the server once</td></tr>
+          <tr><td>Needs internet?</td><td>Usually no</td><td>Usually yes, unless it runs locally (localhost)</td></tr>
+          <tr><td>Examples</td><td>MS Word, VLC</td><td>YouTube, Flipkart, Amazon</td></tr>
+        </table></div>
+      </div>
+    </section>
+
+    <section class="part" id="client-server">
+      <h2>Client, server and database</h2>
+      <p class="lead">Three roles work together. Learn them with an online shop: you (the client) ask, the shop's server answers, and the database remembers the products and orders.</p>
+      <div class="grid">
+        <div class="card"><div class="card-head"><h3>Client</h3><span class="tag">asks</span></div><p>The program that sends a request. Usually the <b>browser</b> on your phone.</p></div>
+        <div class="card"><div class="card-head"><h3>Server</h3><span class="tag">answers</span></div><p>A computer or program that waits for requests and gives replies. It is always switched on.</p></div>
+        <div class="card"><div class="card-head"><h3>Database</h3><span class="tag">stores</span></div><p>An organised store of data such as users, products, prices and orders.</p></div>
+        <div class="card"><div class="card-head"><h3>Application logic</h3><span class="tag">rules</span></div><p>The rules of the app: is this password correct? Is the item in stock? Can this order be placed?</p></div>
+      </div>
+      <div class="tip" style="margin-top:14px"><b>Important:</b> a server does not hold everything. Some code runs in the browser (a dropdown opening), some on the server (password checks), and data may sit in a separate database machine.</div>
+    </section>
+
+    <section class="part" id="cycle">
+      <h2>Working of a web application</h2>
+      <p class="lead">Example: a user opens Flipkart, searches for a mobile phone and sees the matching products. Press <b>Next</b> to walk through each step.</p>
+      <div class="panel">
+        <div class="steps" id="steps"></div>
+        <div class="stepbox" id="stepText"></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="prevStep">← Previous</button>
+          <button class="btn primary" id="nextStep">Next →</button>
+          <button class="btn" id="resetStep">Restart</button>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <b>Architecture flow</b>
+        <pre style="margin-top:10px">User → Browser (client) → HTTP request → Server / application
+                                       ↓ query (when needed)
+                                   Database
+                                       ↓ result
+User ← Browser (client) ← HTTP response ← Server / application</pre>
+        <p class="lead" style="margin:10px 0 0">The browser and the server exchange HTTP messages. The server may query the database before it replies.</p>
+      </div>
+    </section>
+
+    <section class="part" id="frontend">
+      <h2>Frontend development</h2>
+      <p class="lead">Frontend is the part the user sees. HTML builds the structure, CSS styles it and JavaScript adds behaviour.</p>
+      <div class="grid">
+        <div class="card"><div class="card-head"><h3>HTML</h3><span class="tag">structure</span></div><p>HyperText Markup Language. Headings, paragraphs, images, links, buttons and forms. <b>Not a programming language.</b></p><pre>&lt;h1&gt;Welcome&lt;/h1&gt;
+&lt;button&gt;Add to Cart&lt;/button&gt;</pre></div>
+        <div class="card"><div class="card-head"><h3>CSS</h3><span class="tag">style</span></div><p>Cascading Style Sheets. Colours, fonts, spacing, borders and layout.</p><pre>button {
+  background: blue;
+  color: white;
+  border-radius: 6px;
+}</pre></div>
+        <div class="card"><div class="card-head"><h3>JavaScript</h3><span class="tag">behaviour</span></div><p>Button clicks, form checks, dropdowns and dynamic updates. Runs in the browser and, with Node.js, on the server.</p><pre>button.onclick = () =&gt;
+  alert("Item added");</pre></div>
+        <div class="card"><div class="card-head"><h3>React.js</h3><span class="tag">library</span></div><p>A JavaScript library for building user interfaces from reusable <b>components</b>. Like a LEGO brick: build one product card and reuse it for every product.</p></div>
+        <div class="card"><div class="card-head"><h3>Angular</h3><span class="tag">framework</span></div><p>A frontend web application <b>framework</b> with a full structure and built-in tools.</p></div>
+        <div class="card"><div class="card-head"><h3>Tailwind CSS</h3><span class="tag">utility CSS</span></div><p>A <b>utility-first</b> CSS framework: small ready-made classes added directly in HTML.</p><pre>&lt;button class="bg-blue-600 text-white px-4 py-2 rounded"&gt;</pre></div>
+      </div>
+      <div class="tablewrap" style="margin-top:14px"><table>
+        <tr><th>Technology</th><th>Type</th><th>Main purpose</th><th>Real-life comparison</th></tr>
+        <tr><td>HTML</td><td>Markup language</td><td>Structure</td><td>Walls and rooms</td></tr>
+        <tr><td>CSS</td><td>Style language</td><td>Look and layout</td><td>Paint and furniture</td></tr>
+        <tr><td>JavaScript</td><td>Programming language</td><td>Behaviour</td><td>Switches and doors</td></tr>
+        <tr><td>React</td><td>JavaScript library</td><td>Reusable UI parts</td><td>LEGO bricks</td></tr>
+        <tr><td>Angular</td><td>Frontend framework</td><td>Full structure for large apps</td><td>Complete construction kit</td></tr>
+        <tr><td>Tailwind CSS</td><td>CSS framework</td><td>Quick styling</td><td>Box of small paint tools</td></tr>
+      </table></div>
+    </section>
+
+    <section class="part" id="backend">
+      <h2>Backend development and databases</h2>
+      <p class="lead">The backend works behind the scenes. Sensitive work, such as passwords, payments and prices, must happen on the server, because the browser code can be changed by the user.</p>
+      <div class="grid">
+        <div class="card"><div class="card-head"><h3>Server-side</h3><span class="tag">backend</span></div><p>Logic, passwords, orders and payments run on the server. Frontend checks are for convenience; backend checks are for security.</p></div>
+        <div class="card"><div class="card-head"><h3>Node.js</h3><span class="tag">JavaScript on server</span></div><p>A runtime that runs JavaScript outside the browser. Other backend languages include Java, Python and PHP.</p></div>
+        <div class="card"><div class="card-head"><h3>MySQL</h3><span class="tag">relational</span></div><p>Stores data in tables with rows and columns, linked by keys. Queried with SQL.</p></div>
+        <div class="card"><div class="card-head"><h3>MongoDB</h3><span class="tag">document</span></div><p>Stores flexible JSON-like documents grouped in collections.</p></div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <b>Shopping example: which part does what?</b>
+        <div class="tablewrap" style="margin-top:10px"><table>
+          <tr><th>Feature</th><th>Backend work</th></tr>
+          <tr><td>Product search</td><td>Reads the search words, queries the product table, returns matches</td></tr>
+          <tr><td>Login</td><td>Checks the username and password against protected stored data</td></tr>
+          <tr><td>Order placement</td><td>Checks stock, saves the order, reduces stock</td></tr>
+          <tr><td>Payment</td><td>Sends the payment request to a provider and records the result</td></tr>
+        </table></div>
+      </div>
+    </section>
+
+    <section class="part" id="urls">
+      <h2>URL, IP address and DNS</h2>
+      <p class="lead">A URL is the full address. An IP address is a number that identifies a device. DNS turns a domain name into an IP address.</p>
+      <div class="panel">
+        <pre>https://www.flipkart.com/search?q=mobile+phone
+ │       │                │       │
+ │       │                │       └─ query (search words)
+ │       │                └───────── path (which resource)
+ │       └────────────────────────── domain name
+ └────────────────────────────────── protocol (secure HTTP)</pre>
+        <p class="lead" style="margin:12px 0 0"><b>IP example:</b> 192.168.1.2 is a private address on a home network. It is <b>not</b> Flipkart's public address.</p>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <div class="trace" id="dnsTrace">Click “Resolve” to see the DNS steps.</div>
+        <div class="row" style="margin-top:10px"><button class="btn primary" id="dnsBtn">Resolve www.flipkart.com</button></div>
+      </div>
+    </section>
+
+    <section class="part" id="methods">
+      <h2>HTTP request methods</h2>
+      <p class="lead">A method says what the client wants to do. It is a keyword in the request, not a programming-language method. Exact behaviour depends on the server and API design.</p>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between"><b>Method picker</b>
+          <select id="methodSel">
+            <option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option><option value="DELETE">DELETE</option><option value="OPTIONS">OPTIONS</option>
+          </select>
+        </div>
+        <div id="methodOut" style="margin-top:14px"></div>
+      </div>
+      <div class="tip" style="margin-top:14px"><b>PUT vs PATCH:</b> PUT sends the whole new version of the resource. PATCH sends only the fields that change.</div>
+    </section>
+
+    <section class="part" id="status">
+      <h2>HTTP responses and status codes</h2>
+      <p class="lead">A response has a status code, a reason phrase, headers and, when needed, a body. The first digit gives the category.</p>
+      <div class="grid" style="margin-bottom:14px">
+        <div class="card"><div class="card-head"><h3>1xx</h3><span class="tag">info</span></div><p>Informational: still working.</p></div>
+        <div class="card"><div class="card-head"><h3>2xx</h3><span class="tag">success</span></div><p>Your request worked.</p></div>
+        <div class="card"><div class="card-head"><h3>3xx</h3><span class="tag">redirect</span></div><p>Go somewhere else.</p></div>
+        <div class="card"><div class="card-head"><h3>4xx</h3><span class="tag">client error</span></div><p>Problem with the request or your access.</p></div>
+        <div class="card"><div class="card-head"><h3>5xx</h3><span class="tag">server error</span></div><p>The server or a service it depends on failed.</p></div>
+      </div>
+      <div class="panel">
+        <div class="codes" id="codeBtns"></div>
+        <div id="codeOut"></div>
+      </div>
+      <div class="tip" style="margin-top:14px"><b>Remember:</b> 4xx and 5xx are useful guidelines, not absolute proof of the cause. Check the message and logs before deciding. 401 = “who are you?”, 403 = “you are not allowed”.</div>
+    </section>
+
+    <section class="part" id="examples">
+      <h2>Practical examples</h2>
+      <p class="lead">These HTTP messages are simplified illustrations for learning. They are not captured from a real website.</p>
+      <div class="grid">
+        <div class="card"><div class="card-head"><h3>1 · Open a site</h3><span class="tag">GET · 200</span></div><pre>GET / HTTP/1.1
+Host: www.example-shop.com
+
+HTTP/1.1 200 OK
+Content-Type: text/html</pre></div>
+        <div class="card"><div class="card-head"><h3>2 · Search</h3><span class="tag">GET · 200</span></div><pre>GET /search?q=mobile+phone HTTP/1.1
+Host: www.example-shop.com
+
+HTTP/1.1 200 OK
+Content-Type: application/json</pre><p>The search words travel in the URL because searching retrieves information.</p></div>
+        <div class="card"><div class="card-head"><h3>3 · Login failures</h3><span class="tag">400 · 401 · 403</span></div><p><b>400</b> the password field is missing. <b>401</b> the password is wrong. <b>403</b> a logged-in customer opens the admin page.</p></div>
+        <div class="card"><div class="card-head"><h3>4 · Server failure</h3><span class="tag">500</span></div><pre>POST /orders HTTP/1.1
+Host: www.example-shop.com
+
+HTTP/1.1 500 Internal Server Error</pre><p>The request was valid. The server hit a bug while saving the order, so the fault is on the server side.</p></div>
+      </div>
+    </section>
+
+    <section class="part" id="quiz">
+      <h2>Quiz</h2>
+      <p class="lead">16 questions. Answer each one, then read the feedback.</p>
+      <div class="panel" id="quizBox"></div>
+      <div class="score" id="scoreBox"></div>
+    </section>
+
+    <section class="part" id="revision">
+      <h2>Revision</h2>
+      <p class="lead">One-page recap of Session 1.</p>
+      <div class="panel">
+        <ul style="margin:0;padding-left:20px;line-height:1.9">
+          <li>A web application runs on a server and is used through a browser.</li>
+          <li>Client asks, server answers, database stores data.</li>
+          <li>Cycle: browser → HTTP request → server (logic) → database (if needed) → HTTP response → browser shows the page.</li>
+          <li>HTML = structure, CSS = style, JavaScript = behaviour. React = UI library, Angular = framework, Tailwind = utility CSS.</li>
+          <li>Sensitive logic (passwords, payments, prices) belongs on the server. Node.js runs JavaScript on the server.</li>
+          <li>URL = full address. IP = number. DNS = domain name to IP.</li>
+          <li>GET retrieves · POST submits/creates · PUT replaces · PATCH changes part · DELETE removes · OPTIONS asks what is allowed.</li>
+          <li>2xx success · 3xx redirect · 4xx client error · 5xx server error. 401 = authentication. 403 = authorisation. 500 = server failure.</li>
+        </ul>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <label class="learned"><input type="checkbox" class="learnBox"> I understand the request-response cycle</label>
+        <label class="learned" style="margin-top:6px"><input type="checkbox" class="learnBox"> I can name the HTTP methods</label>
+        <label class="learned" style="margin-top:6px"><input type="checkbox" class="learnBox"> I can explain 401 vs 403</label>
+        <label class="learned" style="margin-top:6px"><input type="checkbox" class="learnBox"> I can explain DNS</label>
+        <label class="learned" style="margin-top:6px"><input type="checkbox" class="learnBox"> I know frontend vs backend</label>
+        <label class="learned" style="margin-top:6px"><input type="checkbox" class="learnBox"> I finished the quiz</label>
+      </div>
+    </section>
+
+    <footer>CDAC WT · Session 1 · Sessions open in their own pages</footer>
+  </main>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------- apps cards ---------- */
+const APPS = [
+  {t:"Desktop app", tag:"installed", d:"Installed on your computer, e.g. MS Word or VLC. Runs on your own hardware."},
+  {t:"Web app", tag:"browser", d:"Used in a browser, e.g. YouTube, Flipkart, Amazon. The app runs on a server."},
+  {t:"Localhost app", tag:"no internet", d:"A web app running on your own laptop at localhost. The browser is still used, but no internet is needed."}
+];
+$("grid-apps").innerHTML = APPS.map(a => `<div class="card"><div class="card-head"><h3>${esc(a.t)}</h3><span class="tag">${esc(a.tag)}</span></div><p>${esc(a.d)}</p></div>`).join("");
+
+/* ---------- stepper ---------- */
+const STEPS = [
+  {n:"Open", t:"The user types www.flipkart.com and presses Enter. The browser must find the server."},
+  {n:"Request", t:"The browser sends an HTTP request: GET /search?q=mobile+phone."},
+  {n:"Receive", t:"The request travels over the internet and reaches the web server."},
+  {n:"Process", t:"The application logic reads the search words and decides what to look for."},
+  {n:"Database", t:"The application asks the database for mobile phones. The database returns the matching rows."},
+  {n:"Response", t:"The server builds the reply: 200 OK, headers and the product list."},
+  {n:"Display", t:"The browser receives the response and shows the product cards."}
+];
+let stepIdx = 0;
+function drawSteps(){
+  $("steps").innerHTML = STEPS.map((s,i) => `<div class="step ${i===stepIdx?'on':''}"><small>${i+1}</small>${esc(s.n)}</div>`).join("");
+  $("stepText").innerHTML = `<b>Step ${stepIdx+1}:</b> ${esc(STEPS[stepIdx].t)}`;
+  $("prevStep").disabled = stepIdx === 0;
+  $("nextStep").disabled = stepIdx === STEPS.length-1;
+}
+$("nextStep").onclick = () => { if (stepIdx < STEPS.length-1) { stepIdx++; drawSteps(); markSection(0); } };
+$("prevStep").onclick = () => { if (stepIdx > 0) { stepIdx--; drawSteps(); } };
+$("resetStep").onclick = () => { stepIdx = 0; drawSteps(); };
+drawSteps();
+
+/* ---------- DNS trace ---------- */
+const DNS = [
+  "1. You type www.flipkart.com in the browser.",
+  "2. The browser asks a DNS server: what is the IP address of www.flipkart.com?",
+  "3. The DNS server replies with an IP address (a public address).",
+  "4. The browser connects to that IP address and sends the HTTP request.",
+  "",
+  "Why a name? People remember names more easily, and the company can move its servers without changing the name."
+];
+let dnsShown = 0;
+const DNS_IDLE = "Click “Resolve” to see the DNS steps.";
+$("dnsBtn").onclick = () => {
+  if (dnsShown >= DNS.length) {            // finished: reset
+    dnsShown = 0;
+    $("dnsTrace").textContent = DNS_IDLE;
+    $("dnsBtn").textContent = "Resolve www.flipkart.com";
+    return;
+  }
+  $("dnsTrace").textContent = dnsShown === 0 ? DNS[0] : $("dnsTrace").textContent + "\n" + DNS[dnsShown];
+  dnsShown++;
+  if (dnsShown >= DNS.length) $("dnsBtn").textContent = "Start again";
+  else $("dnsBtn").textContent = "Next step →";
+};
+
+/* ---------- methods ---------- */
+const METHODS = {
+  GET:{p:"Retrieve information. Should not change data.", ex:"Opening the Flipkart home page, searching.", req:"GET /search?q=mobile+phone HTTP/1.1\nHost: www.flipkart.com"},
+  POST:{p:"Submit data, usually to create something new.", ex:"Login form, placing an order.", req:"POST /login HTTP/1.1\nHost: www.example-shop.com\nContent-Type: application/json\n\n{\"username\": \"asha\", \"password\": \"example-only\"}"},
+  PUT:{p:"Replace a resource with a new full version.", ex:"Saving the whole profile form.", req:"PUT /users/101 HTTP/1.1\nHost: www.example-shop.com\nContent-Type: application/json\n\n{\"name\": \"Asha\", \"city\": \"Pune\", \"phone\": \"9876543210\"}"},
+  PATCH:{p:"Partially update a resource. Only changed fields are sent.", ex:"Changing only the phone number.", req:"PATCH /users/101 HTTP/1.1\nHost: www.example-shop.com\nContent-Type: application/json\n\n{\"phone\": \"9123456780\"}"},
+  DELETE:{p:"Request removal of a resource.", ex:"Removing an item from the cart.", req:"DELETE /cart/items/55 HTTP/1.1\nHost: www.example-shop.com"},
+  OPTIONS:{p:"Ask which methods and options the server supports.", ex:"Browser pre-check before a cross-site request.", req:"OPTIONS /api/orders HTTP/1.1\nHost: api.example-shop.com"}
+};
+function showMethod(){
+  const m = METHODS[$("methodSel").value];
+  $("methodOut").innerHTML = `<p><b>Purpose:</b> ${esc(m.p)}</p><p><b>Real-life example:</b> ${esc(m.ex)}</p><b>Sample request (illustrative):</b><pre style="margin-top:8px">${esc(m.req)}</pre>`;
+}
+$("methodSel").onchange = showMethod; showMethod();
+
+/* ---------- status codes ---------- */
+const CODES = {
+  "200":{n:"OK", c:"2xx", d:"The request succeeded and the response has the data.", ex:"The Flipkart home page loads normally."},
+  "201":{n:"Created", c:"2xx", d:"A new resource was created, usually after a POST.", ex:"A new shopping account is created."},
+  "202":{n:"Accepted", c:"2xx", d:"Accepted, but processing is not finished.", ex:"A large sales report is queued."},
+  "301":{n:"Moved Permanently", c:"3xx", d:"The page has a new permanent address.", ex:"An old product link now points to a new page."},
+  "302":{n:"Found", c:"3xx", d:"The page is temporarily at another address.", ex:"A temporary maintenance or regional redirect."},
+  "400":{n:"Bad Request", c:"4xx", d:"The request is malformed or incomplete.", ex:"The login form is sent without the password field."},
+  "401":{n:"Unauthorized", c:"4xx", d:"Authentication is required or has failed. Who are you?", ex:"Opening order history without logging in, or a wrong password."},
+  "403":{n:"Forbidden", c:"4xx", d:"You are known, but not allowed to access this.", ex:"A customer opens the seller admin page."},
+  "404":{n:"Not Found", c:"4xx", d:"No resource exists at this address.", ex:"A removed product link."},
+  "500":{n:"Internal Server Error", c:"5xx", d:"The server failed unexpectedly while handling a valid request.", ex:"A bug while saving an order."},
+  "502":{n:"Bad Gateway", c:"5xx", d:"A gateway or proxy got an invalid reply from another server it depends on.", ex:"The front server gets a bad reply from the payment service."},
+  "503":{n:"Service Unavailable", c:"5xx", d:"Temporarily unable to serve, often overload or maintenance.", ex:"The site is overloaded during a big sale."}
+};
+let codeSel = "401";
+function drawCodes(){
+  $("codeBtns").innerHTML = Object.keys(CODES).map(k => `<button class="codebtn ${k===codeSel?'on':''}" data-k="${k}">${k}</button>`).join("");
+  $("codeBtns").querySelectorAll(".codebtn").forEach(b => b.onclick = () => { codeSel = b.dataset.k; drawCodes(); markSection(0); });
+  const c = CODES[codeSel];
+  $("codeOut").innerHTML = `<div class="row" style="justify-content:space-between"><b style="font-size:18px">${codeSel} ${esc(c.n)}</b><span class="tag">${c.c}</span></div><p style="margin-top:10px"><b>Meaning:</b> ${esc(c.d)}</p><p><b>Real-life example:</b> ${esc(c.ex)}</p>`;
+}
+drawCodes();
+
+/* ---------- quiz ---------- */
+const QUIZ = [
+ {q:"Which one is a desktop application?", o:["YouTube","MS Word","Flipkart","Amazon"], a:1, e:"MS Word is installed on your computer. The others are used in a browser."},
+ {q:"What is the main job of a browser?", o:["Stores all the data","Sends requests and shows web pages","Runs the database","Is the server"], a:1, e:"The browser is the client. It sends requests and displays the replies."},
+ {q:"Which one is a client?", o:["The server","The browser on your phone","The database","Node.js on the shop's server"], a:1, e:"The client asks for something. Your browser does that."},
+ {q:"Where should password checking happen?", o:["Only in the browser","On the server","In both places equally","In the database client"], a:1, e:"The browser code can be changed by the user, so the server must check passwords."},
+ {q:"What does DNS do?", o:["Stores orders","Converts a domain name into an IP address","Runs JavaScript","Encrypts passwords"], a:1, e:"DNS is a name lookup system: www.flipkart.com becomes an IP address."},
+ {q:"HTML is best described as:", o:["A programming language","A markup language that describes structure","A database","A server"], a:1, e:"HTML describes what things are on the page. It is not a programming language."},
+ {q:"Which tool is a utility-first CSS framework?", o:["React","Angular","Tailwind CSS","Node.js"], a:2, e:"Tailwind CSS adds small ready-made style classes directly in HTML."},
+ {q:"To change only a phone number, which method fits best?", o:["PUT with the full profile","PATCH","DELETE","GET"], a:1, e:"PATCH sends only the changed field. PUT would replace the whole resource."},
+ {q:"Which method is used to retrieve a page?", o:["GET","POST","PUT","DELETE"], a:0, e:"GET retrieves information and should not change data."},
+ {q:"401 Unauthorized means:", o:["Logged in but forbidden","Authentication is required or has failed","Page not found","The server crashed"], a:1, e:"401 is about who you are. You must log in, or your login details are wrong."},
+ {q:"403 Forbidden means:", o:["Login is needed","The server knows you but you are not allowed","A redirect","A bad request"], a:1, e:"403 is about permission. The server knows you, and refuses the access."},
+ {q:"A product link was removed. Which code is most likely?", o:["200","301","404","503"], a:2, e:"404 Not Found means the resource is not at this address."},
+ {q:"A bug stops an order from being saved on the server. Which code?", o:["400","401","404","500"], a:3, e:"500 means the server failed while handling a valid request."},
+ {q:"A new account is created after a POST. Which code is best?", o:["200 OK","201 Created","301 Moved Permanently","302 Found"], a:1, e:"201 Created means a new resource was made."},
+ {q:"Which category is a server error?", o:["2xx","3xx","4xx","5xx"], a:3, e:"5xx means the server or a service it depends on failed."},
+ {q:"Which database is document-oriented?", o:["MySQL","MongoDB","HTML","CSS"], a:1, e:"MongoDB stores JSON-like documents in collections. MySQL uses tables."}
+];
+const answered = new Array(QUIZ.length).fill(null);
+function drawQuiz(){
+  $("quizBox").innerHTML = QUIZ.map((x,i) => `
+    <div class="q" data-i="${i}"><h4>${i+1}. ${esc(x.q)}</h4>
+      <div class="opts">${x.o.map((o,j)=>`<button class="opt" data-j="${j}">${esc(String.fromCharCode(65+j))}) ${esc(o)}</button>`).join("")}</div>
+      <div class="feedback"></div></div>`).join("<hr style='border:0;border-top:1px solid var(--border);margin:18px 0'>");
+  $("quizBox").querySelectorAll(".q").forEach(qe => {
+    const i = Number(qe.dataset.i);
+    qe.querySelectorAll(".opt").forEach(btn => btn.onclick = () => {
+      if (answered[i] !== null) return;
+      const j = Number(btn.dataset.j); answered[i] = j;
+      const opts = qe.querySelectorAll(".opt");
+      opts.forEach(b => b.disabled = true);
+      opts[QUIZ[i].a].classList.add("right");
+      if (j !== QUIZ[i].a) btn.classList.add("wrong");
+      qe.querySelector(".feedback").textContent = (j === QUIZ[i].a ? "Correct. " : "Not quite. ") + QUIZ[i].e;
+      updateScore(); markSection(0);
+    });
+  });
+}
+function updateScore(){
+  const done = answered.filter(v => v !== null).length;
+  const right = answered.reduce((s,v,i) => s + (v === QUIZ[i].a ? 1 : 0), 0);
+  $("scoreBox").textContent = done === QUIZ.length ? `Final score: ${right} / ${QUIZ.length}` : `Score so far: ${right} / ${done} answered`;
+}
+drawQuiz();
+
+/* ---------- search (filters cards on this page) ---------- */
+$("q").addEventListener("input", e => {
+  const term = e.target.value.trim().toLowerCase();
+  document.querySelectorAll("section.part .card, section.part tr").forEach(el => {
+    const hit = !term || el.textContent.toLowerCase().includes(term);
+    el.classList.toggle("hide", !hit);
+  });
+});
+
+/* ---------- theme ---------- */
+$("theme").addEventListener("click", () => {
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  if (dark) { document.documentElement.removeAttribute("data-theme"); $("theme").textContent = "🌙"; }
+  else { document.documentElement.setAttribute("data-theme","dark"); $("theme").textContent = "☀️"; }
+});
+
+/* ---------- progress (simple; checkboxes in Revision + interaction-based) ---------- */
+const SECTIONS = ["apps","client-server","cycle","frontend","backend","urls","methods","status","examples","quiz","revision"];
+const seen = new Set();
+function markSection(_){ /* counts sections the learner has interacted with */
+  seen.add(_);
+}
+function refreshProgress(){
+  const boxes = [...document.querySelectorAll(".learnBox")];
+  const ticked = boxes.filter(b => b.checked).length;
+  const pct = Math.round((ticked / boxes.length) * 100);
+  $("pbar").style.width = pct + "%";
+  $("ptext").textContent = `${ticked} of ${boxes.length} goals marked learned`;
+}
+document.querySelectorAll(".learnBox").forEach(b => b.addEventListener("change", refreshProgress));
+refreshProgress();
+
+/* ---------- sidebar highlight ---------- */
+const links = [...document.querySelectorAll("nav.side a")];
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (en.isIntersecting) links.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + en.target.id));
+  });
+}, { rootMargin: "-40% 0px -55% 0px" });
+document.querySelectorAll("section.part").forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
